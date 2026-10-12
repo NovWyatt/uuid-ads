@@ -361,6 +361,8 @@ const TEXT = {
         added: (n: string) => `+${n} members`,
         scrollStarted: 'Auto-scroll started',
         scrollStopped: 'Auto-scroll stopped',
+        autoStopped: (s: number) => `No new members for ${s}s, auto-scroll stopped`,
+        hintDone: 'Looks like the end of the list. Download your CSV.',
         noData: 'No data to download',
         downloaded: (n: string) => `Downloaded ${n} members`,
         downloadFailed: 'Download failed',
@@ -386,6 +388,8 @@ const TEXT = {
         added: (n: string) => `+${n} thành viên`,
         scrollStarted: 'Bắt đầu tự động cuộn',
         scrollStopped: 'Đã dừng tự động cuộn',
+        autoStopped: (s: number) => `${s} giây không có thành viên mới, đã tự dừng cuộn`,
+        hintDone: 'Có vẻ đã hết danh sách. Bấm Tải CSV để lưu.',
         noData: 'Chưa có dữ liệu để tải',
         downloaded: (n: string) => `Đã tải xuống ${n} thành viên`,
         downloadFailed: 'Tải xuống thất bại',
@@ -397,6 +401,9 @@ const TEXT = {
 const LANG = (document.documentElement.lang || navigator.language || '').toLowerCase().startsWith('vi') ? 'vi' : 'en';
 const T = TEXT[LANG];
 const fmtNum = (n: number) => n.toLocaleString(T.locale);
+
+// Facebook usually answers a scroll within a few seconds; this long without a new member means the list is exhausted.
+const AUTO_STOP_MS = 15000;
 
 // ── UI Panel ─────────────────────────────────
 
@@ -416,6 +423,7 @@ class ScraperPanel {
     private isMinimized = false;
     private isScrolling = false;
     private scrollTimer: ReturnType<typeof setInterval> | null = null;
+    private lastNewMemberAt = 0;
     private groups = new Set<string>();
     private pulseTimer: ReturnType<typeof setTimeout> | null = null;
     private confirmingReset = false;
@@ -593,6 +601,7 @@ class ScraperPanel {
     }
 
     async onCapture(addedCount: number, groupId?: string) {
+        this.lastNewMemberAt = Date.now();
         if (groupId) this.groups.add(groupId);
         this.groupCountEl.textContent = T.groups(this.groups.size);
         await this.refreshCounter();
@@ -650,21 +659,35 @@ class ScraperPanel {
     }
 
     private toggleAutoScroll() {
-        this.isScrolling = !this.isScrolling;
         if (this.isScrolling) {
-            this.scrollBtn.textContent = T.stopScroll;
-            this.scrollBtn.classList.add('fbs-btn-active');
-            this.scrollTimer = setInterval(() => {
-                window.scrollTo(0, document.body.scrollHeight);
-            }, 150);
-            this.addLog(T.scrollStarted);
-        } else {
-            this.scrollBtn.textContent = T.autoScroll;
-            this.scrollBtn.classList.remove('fbs-btn-active');
-            if (this.scrollTimer) {
-                clearInterval(this.scrollTimer);
-                this.scrollTimer = null;
+            this.stopAutoScroll(false);
+            return;
+        }
+        this.isScrolling = true;
+        this.lastNewMemberAt = Date.now();
+        this.scrollBtn.textContent = T.stopScroll;
+        this.scrollBtn.classList.add('fbs-btn-active');
+        this.scrollTimer = setInterval(() => {
+            window.scrollTo(0, document.body.scrollHeight);
+            if (Date.now() - this.lastNewMemberAt > AUTO_STOP_MS) {
+                this.stopAutoScroll(true);
             }
+        }, 150);
+        this.addLog(T.scrollStarted);
+    }
+
+    private stopAutoScroll(endOfList: boolean) {
+        this.isScrolling = false;
+        this.scrollBtn.textContent = T.autoScroll;
+        this.scrollBtn.classList.remove('fbs-btn-active');
+        if (this.scrollTimer) {
+            clearInterval(this.scrollTimer);
+            this.scrollTimer = null;
+        }
+        if (endOfList) {
+            this.addLog(T.autoStopped(AUTO_STOP_MS / 1000));
+            this.statusEl.textContent = T.hintDone;
+        } else {
             this.addLog(T.scrollStopped);
         }
     }
