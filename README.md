@@ -367,4 +367,4 @@ The generated script is in `dist/main.min.js`, and the build also copies it into
 
 ## Credits
 
-Based on [floriandiud/facebook-group-members-scraper](https://github.com/floriandiud/facebook-group-members-scraper) (MIT). The same author also maintains free scrapers for [Instagram](https://github.com/floriandiud/instagram-users-scraper) and [WhatsApp](https://github.com/floriandiud/whatsapp-group-members-scraper).
+Based on [floriandiud/facebook-group-members-scraper](https://github.com/floriandiud/facebook-group-members-scraper). Released under the [MIT License](LICENSE). The same author also maintains free scrapers for [Instagram](https://github.com/floriandiud/instagram-users-scraper) and [WhatsApp](https://github.com/floriandiud/whatsapp-group-members-scraper).
