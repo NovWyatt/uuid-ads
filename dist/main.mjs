@@ -1,28 +1,28 @@
-var q = Object.defineProperty;
-var Z = (n, t, e) => t in n ? q(n, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : n[t] = e;
-var m = (n, t, e) => Z(n, typeof t != "symbol" ? t + "" : t, e);
-function G(n, t) {
-  for (var e = function(a) {
-    for (var l = "", p = 0; p < a.length; p++) {
-      var d = a[p] === null || typeof a[p] > "u" ? "" : a[p].toString();
-      a[p] instanceof Date && (d = a[p].toLocaleString());
-      var u = d.replace(/"/g, '""');
-      u.search(/("|,|\n)/g) >= 0 && (u = '"' + u + '"'), p > 0 && (l += ","), l += u;
+var G = Object.defineProperty;
+var Q = (e, t, n) => t in e ? G(e, t, { enumerable: !0, configurable: !0, writable: !0, value: n }) : e[t] = n;
+var u = (e, t, n) => Q(e, typeof t != "symbol" ? t + "" : t, n);
+function tt(e, t) {
+  for (var n = function(a) {
+    for (var d = "", m = 0; m < a.length; m++) {
+      var p = a[m] === null || typeof a[m] > "u" ? "" : a[m].toString();
+      a[m] instanceof Date && (p = a[m].toLocaleString());
+      var h = p.replace(/"/g, '""');
+      h.search(/("|,|\n)/g) >= 0 && (h = '"' + h + '"'), m > 0 && (d += ","), d += h;
     }
-    return l + `
+    return d + `
 `;
   }, i = "", o = 0; o < t.length; o++)
-    i += e(t[o]);
+    i += n(t[o]);
   var r = new Blob([i], { type: "text/csv;charset=utf-8;" }), s = document.createElement("a");
   if (s.download !== void 0) {
-    var c = URL.createObjectURL(r);
-    s.setAttribute("href", c), s.setAttribute("download", n), document.body.appendChild(s), s.click(), document.body.removeChild(s);
+    var l = URL.createObjectURL(r);
+    s.setAttribute("href", l), s.setAttribute("download", e), document.body.appendChild(s), s.click(), document.body.removeChild(s);
   }
 }
-const C = (n, t) => t.some((e) => n instanceof e);
-let A, N;
-function Q() {
-  return A || (A = [
+const D = (e, t) => t.some((n) => e instanceof n);
+let P, j;
+function et() {
+  return P || (P = [
     IDBIndex,
     IDBObjectStore,
     IDBCursor,
@@ -30,184 +30,184 @@ function Q() {
     IDBTransaction
   ]);
 }
-function tt() {
-  return N || (N = ["advance", "continue", "continuePrimaryKey"].map((n) => IDBCursor.prototype[n]));
+function nt() {
+  return j || (j = ["advance", "continue", "continuePrimaryKey"].map((e) => IDBCursor.prototype[e]));
 }
-const S = /* @__PURE__ */ new WeakMap(), B = /* @__PURE__ */ new WeakMap(), y = /* @__PURE__ */ new WeakMap();
-function et(n) {
-  const t = new Promise((e, i) => {
+const I = /* @__PURE__ */ new WeakMap(), B = /* @__PURE__ */ new WeakMap(), v = /* @__PURE__ */ new WeakMap();
+function it(e) {
+  const t = new Promise((n, i) => {
     const o = () => {
-      n.removeEventListener("success", r), n.removeEventListener("error", s);
+      e.removeEventListener("success", r), e.removeEventListener("error", s);
     }, r = () => {
-      e(b(n.result)), o();
+      n(b(e.result)), o();
     }, s = () => {
-      i(n.error), o();
+      i(e.error), o();
     };
-    n.addEventListener("success", r), n.addEventListener("error", s);
+    e.addEventListener("success", r), e.addEventListener("error", s);
   });
-  return y.set(t, n), t;
+  return v.set(t, e), t;
 }
-function nt(n) {
-  if (S.has(n))
+function ot(e) {
+  if (I.has(e))
     return;
-  const t = new Promise((e, i) => {
+  const t = new Promise((n, i) => {
     const o = () => {
-      n.removeEventListener("complete", r), n.removeEventListener("error", s), n.removeEventListener("abort", s);
+      e.removeEventListener("complete", r), e.removeEventListener("error", s), e.removeEventListener("abort", s);
     }, r = () => {
-      e(), o();
+      n(), o();
     }, s = () => {
-      i(n.error || new DOMException("AbortError", "AbortError")), o();
+      i(e.error || new DOMException("AbortError", "AbortError")), o();
     };
-    n.addEventListener("complete", r), n.addEventListener("error", s), n.addEventListener("abort", s);
+    e.addEventListener("complete", r), e.addEventListener("error", s), e.addEventListener("abort", s);
   });
-  S.set(n, t);
+  I.set(e, t);
 }
-let D = {
-  get(n, t, e) {
-    if (n instanceof IDBTransaction) {
+let L = {
+  get(e, t, n) {
+    if (e instanceof IDBTransaction) {
       if (t === "done")
-        return S.get(n);
+        return I.get(e);
       if (t === "store")
-        return e.objectStoreNames[1] ? void 0 : e.objectStore(e.objectStoreNames[0]);
+        return n.objectStoreNames[1] ? void 0 : n.objectStore(n.objectStoreNames[0]);
     }
-    return b(n[t]);
+    return b(e[t]);
   },
-  set(n, t, e) {
-    return n[t] = e, !0;
+  set(e, t, n) {
+    return e[t] = n, !0;
   },
-  has(n, t) {
-    return n instanceof IDBTransaction && (t === "done" || t === "store") ? !0 : t in n;
+  has(e, t) {
+    return e instanceof IDBTransaction && (t === "done" || t === "store") ? !0 : t in e;
   }
 };
-function W(n) {
-  D = n(D);
+function X(e) {
+  L = e(L);
 }
-function it(n) {
-  return tt().includes(n) ? function(...t) {
-    return n.apply(I(this), t), b(this.request);
+function rt(e) {
+  return nt().includes(e) ? function(...t) {
+    return e.apply(T(this), t), b(this.request);
   } : function(...t) {
-    return b(n.apply(I(this), t));
+    return b(e.apply(T(this), t));
   };
 }
-function ot(n) {
-  return typeof n == "function" ? it(n) : (n instanceof IDBTransaction && nt(n), C(n, Q()) ? new Proxy(n, D) : n);
+function st(e) {
+  return typeof e == "function" ? rt(e) : (e instanceof IDBTransaction && ot(e), D(e, et()) ? new Proxy(e, L) : e);
 }
-function b(n) {
-  if (n instanceof IDBRequest)
-    return et(n);
-  if (B.has(n))
-    return B.get(n);
-  const t = ot(n);
-  return Object.is(t, n) || (B.set(n, t), y.set(t, n)), t;
+function b(e) {
+  if (e instanceof IDBRequest)
+    return it(e);
+  if (B.has(e))
+    return B.get(e);
+  const t = st(e);
+  return Object.is(t, e) || (B.set(e, t), v.set(t, e)), t;
 }
-const I = (n) => y.get(n);
-function rt(n, t, { blocked: e, upgrade: i, blocking: o, terminated: r } = {}) {
-  const s = indexedDB.open(n, t), c = b(s);
+const T = (e) => v.get(e);
+function at(e, t, { blocked: n, upgrade: i, blocking: o, terminated: r } = {}) {
+  const s = indexedDB.open(e, t), l = b(s);
   return i && s.addEventListener("upgradeneeded", (a) => {
     i(b(s.result), a.oldVersion, a.newVersion, b(s.transaction), a);
-  }), e && s.addEventListener("blocked", (a) => e(
+  }), n && s.addEventListener("blocked", (a) => n(
     // Casting due to https://github.com/microsoft/TypeScript-DOM-lib-generator/pull/1405
     a.oldVersion,
     a.newVersion,
     a
-  )), c.then((a) => {
-    r && a.addEventListener("close", () => r()), o && a.addEventListener("versionchange", (l) => o(l.oldVersion, l.newVersion, l));
+  )), l.then((a) => {
+    r && a.addEventListener("close", () => r()), o && a.addEventListener("versionchange", (d) => o(d.oldVersion, d.newVersion, d));
   }).catch(() => {
-  }), c;
+  }), l;
 }
-const st = ["get", "getKey", "getAll", "getAllKeys", "count"], at = ["put", "add", "delete", "clear"], k = {};
-function P(n, t) {
-  if (!(n instanceof IDBDatabase && !(t in n) && typeof t == "string"))
+const ct = ["get", "getKey", "getAll", "getAllKeys", "count"], lt = ["put", "add", "delete", "clear"], k = {};
+function F(e, t) {
+  if (!(e instanceof IDBDatabase && !(t in e) && typeof t == "string"))
     return;
   if (k[t])
     return k[t];
-  const e = t.replace(/FromIndex$/, ""), i = t !== e, o = at.includes(e);
+  const n = t.replace(/FromIndex$/, ""), i = t !== n, o = lt.includes(n);
   if (
     // Bail if the target doesn't exist on the target. Eg, getAll isn't in Edge.
-    !(e in (i ? IDBIndex : IDBObjectStore).prototype) || !(o || st.includes(e))
+    !(n in (i ? IDBIndex : IDBObjectStore).prototype) || !(o || ct.includes(n))
   )
     return;
-  const r = async function(s, ...c) {
+  const r = async function(s, ...l) {
     const a = this.transaction(s, o ? "readwrite" : "readonly");
-    let l = a.store;
-    return i && (l = l.index(c.shift())), (await Promise.all([
-      l[e](...c),
+    let d = a.store;
+    return i && (d = d.index(l.shift())), (await Promise.all([
+      d[n](...l),
       o && a.done
     ]))[0];
   };
   return k[t] = r;
 }
-W((n) => ({
-  ...n,
-  get: (t, e, i) => P(t, e) || n.get(t, e, i),
-  has: (t, e) => !!P(t, e) || n.has(t, e)
+X((e) => ({
+  ...e,
+  get: (t, n, i) => F(t, n) || e.get(t, n, i),
+  has: (t, n) => !!F(t, n) || e.has(t, n)
 }));
-const ct = ["advance", "continue", "continuePrimaryKey"], j = {}, L = /* @__PURE__ */ new WeakMap(), $ = /* @__PURE__ */ new WeakMap(), lt = {
-  get(n, t) {
-    if (!ct.includes(t))
-      return n[t];
-    let e = j[t];
-    return e || (e = j[t] = function(...i) {
-      L.set(this, $.get(this)[t](...i));
-    }), e;
+const dt = ["advance", "continue", "continuePrimaryKey"], V = {}, _ = /* @__PURE__ */ new WeakMap(), K = /* @__PURE__ */ new WeakMap(), pt = {
+  get(e, t) {
+    if (!dt.includes(t))
+      return e[t];
+    let n = V[t];
+    return n || (n = V[t] = function(...i) {
+      _.set(this, K.get(this)[t](...i));
+    }), n;
   }
 };
-async function* dt(...n) {
+async function* mt(...e) {
   let t = this;
-  if (t instanceof IDBCursor || (t = await t.openCursor(...n)), !t)
+  if (t instanceof IDBCursor || (t = await t.openCursor(...e)), !t)
     return;
   t = t;
-  const e = new Proxy(t, lt);
-  for ($.set(e, t), y.set(e, I(t)); t; )
-    yield e, t = await (L.get(e) || t.continue()), L.delete(e);
+  const n = new Proxy(t, pt);
+  for (K.set(n, t), v.set(n, T(t)); t; )
+    yield n, t = await (_.get(n) || t.continue()), _.delete(n);
 }
-function F(n, t) {
-  return t === Symbol.asyncIterator && C(n, [IDBIndex, IDBObjectStore, IDBCursor]) || t === "iterate" && C(n, [IDBIndex, IDBObjectStore]);
+function $(e, t) {
+  return t === Symbol.asyncIterator && D(e, [IDBIndex, IDBObjectStore, IDBCursor]) || t === "iterate" && D(e, [IDBIndex, IDBObjectStore]);
 }
-W((n) => ({
-  ...n,
-  get(t, e, i) {
-    return F(t, e) ? dt : n.get(t, e, i);
+X((e) => ({
+  ...e,
+  get(t, n, i) {
+    return $(t, n) ? mt : e.get(t, n, i);
   },
-  has(t, e) {
-    return F(t, e) || n.has(t, e);
+  has(t, n) {
+    return $(t, n) || e.has(t, n);
   }
 }));
-var f = function(n, t, e, i) {
+var f = function(e, t, n, i) {
   function o(r) {
-    return r instanceof e ? r : new e(function(s) {
+    return r instanceof n ? r : new n(function(s) {
       s(r);
     });
   }
-  return new (e || (e = Promise))(function(r, s) {
-    function c(p) {
+  return new (n || (n = Promise))(function(r, s) {
+    function l(m) {
       try {
-        l(i.next(p));
-      } catch (d) {
-        s(d);
+        d(i.next(m));
+      } catch (p) {
+        s(p);
       }
     }
-    function a(p) {
+    function a(m) {
       try {
-        l(i.throw(p));
-      } catch (d) {
-        s(d);
+        d(i.throw(m));
+      } catch (p) {
+        s(p);
       }
     }
-    function l(p) {
-      p.done ? r(p.value) : o(p.value).then(c, a);
+    function d(m) {
+      m.done ? r(m.value) : o(m.value).then(l, a);
     }
-    l((i = i.apply(n, t || [])).next());
+    d((i = i.apply(e, t || [])).next());
   });
-}, pt = function(n, t) {
-  var e = {};
-  for (var i in n) Object.prototype.hasOwnProperty.call(n, i) && t.indexOf(i) < 0 && (e[i] = n[i]);
-  if (n != null && typeof Object.getOwnPropertySymbols == "function")
-    for (var o = 0, i = Object.getOwnPropertySymbols(n); o < i.length; o++)
-      t.indexOf(i[o]) < 0 && Object.prototype.propertyIsEnumerable.call(n, i[o]) && (e[i[o]] = n[i[o]]);
-  return e;
+}, ut = function(e, t) {
+  var n = {};
+  for (var i in e) Object.prototype.hasOwnProperty.call(e, i) && t.indexOf(i) < 0 && (n[i] = e[i]);
+  if (e != null && typeof Object.getOwnPropertySymbols == "function")
+    for (var o = 0, i = Object.getOwnPropertySymbols(e); o < i.length; o++)
+      t.indexOf(i[o]) < 0 && Object.prototype.propertyIsEnumerable.call(e, i[o]) && (n[i[o]] = e[i[o]]);
+  return n;
 };
-class mt {
+class ht {
   constructor(t) {
     this.name = "scrape-storage", this.persistent = !0, this.data = /* @__PURE__ */ new Map(), t != null && t.name && (this.name = t.name), t != null && t.persistent && (this.persistent = t.persistent), this.initDB().then(() => {
     }).catch(() => {
@@ -219,10 +219,10 @@ class mt {
   }
   initDB() {
     return f(this, void 0, void 0, function* () {
-      this.db = yield rt(this.storageKey, 6, {
-        upgrade(t, e, i, o) {
+      this.db = yield at(this.storageKey, 6, {
+        upgrade(t, n, i, o) {
           let r;
-          if (e < 5)
+          if (n < 5)
             try {
               t.deleteObjectStore("data");
             } catch {
@@ -237,10 +237,10 @@ class mt {
       });
     });
   }
-  _dbGetElem(t, e) {
+  _dbGetElem(t, n) {
     return f(this, void 0, void 0, function* () {
       if (this.persistent && this.db)
-        return e || (e = this.db.transaction("data", "readonly")), yield e.store.index("_pk").get(t);
+        return n || (n = this.db.transaction("data", "readonly")), yield n.store.index("_pk").get(t);
       throw new Error("DB doesnt exist");
     });
   }
@@ -249,55 +249,55 @@ class mt {
       if (this.persistent && this.db)
         try {
           return yield this._dbGetElem(t);
-        } catch (e) {
-          console.error(e);
+        } catch (n) {
+          console.error(n);
         }
       else
         this.data.get(t);
     });
   }
-  _dbSetElem(t, e, i = !1, o, r) {
+  _dbSetElem(t, n, i = !1, o, r) {
     return f(this, void 0, void 0, function* () {
       if (this.persistent && this.db) {
         let s = !1;
         r || (r = this.db.transaction("data", "readwrite"));
-        const c = r.store, a = yield c.index("_pk").get(t);
+        const l = r.store, a = yield l.index("_pk").get(t);
         if (a)
-          i && (yield c.put(Object.assign(Object.assign({}, a), e)), s = !0);
+          i && (yield l.put(Object.assign(Object.assign({}, a), n)), s = !0);
         else {
-          const l = Object.assign({ _pk: t, _createdAt: /* @__PURE__ */ new Date() }, e);
-          o && (l._groupId = o), yield c.put(l), s = !0;
+          const d = Object.assign({ _pk: t, _createdAt: /* @__PURE__ */ new Date() }, n);
+          o && (d._groupId = o), yield l.put(d), s = !0;
         }
         return s;
       } else
         throw new Error("DB doesnt exist");
     });
   }
-  addElem(t, e, i = !1, o) {
+  addElem(t, n, i = !1, o) {
     return f(this, void 0, void 0, function* () {
       if (this.persistent && this.db)
         try {
-          return yield this._dbSetElem(t, e, i, o);
+          return yield this._dbSetElem(t, n, i, o);
         } catch (r) {
           console.error(r);
         }
       else
-        this.data.set(t, e);
+        this.data.set(t, n);
       return !0;
     });
   }
-  addElems(t, e = !1, i) {
+  addElems(t, n = !1, i) {
     return f(this, void 0, void 0, function* () {
       if (this.persistent && this.db) {
         const o = [], r = this.db.transaction("data", "readwrite"), s = [];
-        if (t.forEach(([c, a]) => {
-          s.indexOf(c) === -1 && (s.push(c), o.push(this._dbSetElem(c, a, e, i, r)));
+        if (t.forEach(([l, a]) => {
+          s.indexOf(l) === -1 && (s.push(l), o.push(this._dbSetElem(l, a, n, i, r)));
         }), o.length > 0) {
           o.push(r.done);
-          const c = yield Promise.all(o);
+          const l = yield Promise.all(o);
           let a = 0;
-          return c.forEach((l) => {
-            typeof l == "boolean" && l && (a += 1);
+          return l.forEach((d) => {
+            typeof d == "boolean" && d && (a += 1);
           }), a;
         }
         return 0;
@@ -310,10 +310,10 @@ class mt {
   deleteFromGroupId(t) {
     return f(this, void 0, void 0, function* () {
       if (this.persistent && this.db) {
-        let e = 0, o = yield this.db.transaction("data", "readwrite").store.index("_groupId").openCursor(IDBKeyRange.only(t));
+        let n = 0, o = yield this.db.transaction("data", "readwrite").store.index("_groupId").openCursor(IDBKeyRange.only(t));
         for (; o; )
-          o.delete(), o = yield o.continue(), e += 1;
-        return e;
+          o.delete(), o = yield o.continue(), n += 1;
+        return n;
       } else
         throw new Error("Not Implemented Error");
     });
@@ -331,9 +331,9 @@ class mt {
   getAll() {
     return f(this, void 0, void 0, function* () {
       if (this.persistent && this.db) {
-        const t = /* @__PURE__ */ new Map(), e = yield this.db.getAll("data");
-        return e && e.forEach((i) => {
-          const { _id: o } = i, r = pt(i, ["_id"]);
+        const t = /* @__PURE__ */ new Map(), n = yield this.db.getAll("data");
+        return n && n.forEach((i) => {
+          const { _id: o } = i, r = ut(i, ["_id"]);
           t.set(o, r);
         }), t;
       } else
@@ -353,14 +353,14 @@ class mt {
     });
   }
 }
-var V;
-(function(n) {
-  n.ADD = "add", n.LOG = "log";
-})(V || (V = {}));
-class ut extends mt {
+var H;
+(function(e) {
+  e.ADD = "add", e.LOG = "log";
+})(H || (H = {}));
+class ft extends ht {
   constructor() {
     super(...arguments);
-    m(this, "name", "fb-scrape-storage");
+    u(this, "name", "fb-scrape-storage");
   }
   get headers() {
     return [
@@ -374,26 +374,29 @@ class ut extends mt {
       "Profile Type"
     ];
   }
-  itemToRow(e) {
+  itemToRow(n) {
     return [
-      e.profileId,
-      e.fullName,
-      e.profileLink,
-      e.bio,
-      e.imageSrc,
-      e.groupId,
-      e.groupJoiningText,
-      e.profileType
+      n.profileId,
+      n.fullName,
+      n.profileLink,
+      n.bio,
+      n.imageSrc,
+      n.groupId,
+      n.groupJoiningText,
+      n.profileType
     ];
   }
 }
-const h = new ut();
-async function K(n = 5e3) {
-  const t = Date.now();
-  for (; h.persistent && !h.db && Date.now() - t < n; )
-    await new Promise((e) => setTimeout(e, 50));
+const g = new ft();
+let gt = null;
+function U(e = 5e3) {
+  return gt ?? (gt = (async () => {
+    const t = Date.now();
+    for (; g.persistent && !g.db && Date.now() - t < e; )
+      await new Promise((n) => setTimeout(n, 50));
+  })());
 }
-const ft = `
+const bt = `
 @keyframes fbs-slide-in {
     from { opacity: 0; transform: translateY(20px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -667,81 +670,132 @@ const ft = `
     flex-shrink: 0 !important;
 }
 `;
-function ht() {
+function xt() {
   if (document.getElementById("fbs-styles")) return;
-  const n = document.createElement("style");
-  n.id = "fbs-styles", n.textContent = ft, document.head.appendChild(n);
+  const e = document.createElement("style");
+  e.id = "fbs-styles", e.textContent = bt, document.head.appendChild(e);
 }
-const g = {
+const x = {
   grip: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>',
   minimize: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="12" x2="18" y2="12"/></svg>',
   expand: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>',
   download: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
-};
-class bt {
+}, yt = {
+  en: {
+    locale: "en-US",
+    membersLabel: "members captured",
+    groups: (e) => `from ${e} group${e !== 1 ? "s" : ""}`,
+    hintStart: "Go to a group's Members tab to start",
+    hintCapturing: "Capturing members... keep scrolling!",
+    hintIdle: "Scroll for more, or download when ready",
+    download: "Download CSV",
+    autoScroll: "Auto Scroll",
+    stopScroll: "Stop Scroll",
+    reset: "Reset",
+    confirmReset: "Confirm?",
+    minimize: "Minimize",
+    expand: "Expand",
+    activity: "Activity",
+    ready: "Ready",
+    loadedFromCache: (e) => `Loaded ${e} from cache`,
+    added: (e) => `+${e} members`,
+    scrollStarted: "Auto-scroll started",
+    scrollStopped: "Auto-scroll stopped",
+    noData: "No data to download",
+    downloaded: (e) => `Downloaded ${e} members`,
+    downloadFailed: "Download failed",
+    cleared: "All data cleared"
+  },
+  vi: {
+    locale: "vi-VN",
+    membersLabel: "thành viên đã lấy",
+    groups: (e) => `từ ${e} nhóm`,
+    hintStart: "Mở tab Mọi người của nhóm để bắt đầu",
+    hintCapturing: "Đang lấy thành viên... cứ cuộn tiếp!",
+    hintIdle: "Cuộn thêm để lấy tiếp, hoặc tải CSV khi đủ",
+    download: "Tải CSV",
+    autoScroll: "Tự động cuộn",
+    stopScroll: "Dừng cuộn",
+    reset: "Xóa dữ liệu",
+    confirmReset: "Xác nhận xóa?",
+    minimize: "Thu nhỏ",
+    expand: "Mở rộng",
+    activity: "Hoạt động",
+    ready: "Sẵn sàng",
+    loadedFromCache: (e) => `Đã nạp ${e} người từ bộ nhớ`,
+    added: (e) => `+${e} thành viên`,
+    scrollStarted: "Bắt đầu tự động cuộn",
+    scrollStopped: "Đã dừng tự động cuộn",
+    noData: "Chưa có dữ liệu để tải",
+    downloaded: (e) => `Đã tải xuống ${e} thành viên`,
+    downloadFailed: "Tải xuống thất bại",
+    cleared: "Đã xóa toàn bộ dữ liệu"
+  }
+}, wt = (document.documentElement.lang || navigator.language || "").toLowerCase().startsWith("vi") ? "vi" : "en", c = yt[wt], w = (e) => e.toLocaleString(c.locale);
+class vt {
   constructor() {
-    m(this, "panel");
-    m(this, "body");
-    m(this, "counterEl");
-    m(this, "groupCountEl");
-    m(this, "statusEl");
-    m(this, "statusDot");
-    m(this, "headerBadge");
-    m(this, "logEntries");
-    m(this, "scrollBtn");
-    m(this, "minimizeBtn");
-    m(this, "resetBtn");
-    m(this, "isMinimized", !1);
-    m(this, "isScrolling", !1);
-    m(this, "scrollTimer", null);
-    m(this, "groups", /* @__PURE__ */ new Set());
-    m(this, "pulseTimer", null);
-    m(this, "confirmingReset", !1);
-    m(this, "confirmTimer", null);
-    m(this, "isDragging", !1);
-    m(this, "dragOffX", 0);
-    m(this, "dragOffY", 0);
+    u(this, "panel");
+    u(this, "body");
+    u(this, "counterEl");
+    u(this, "groupCountEl");
+    u(this, "statusEl");
+    u(this, "statusDot");
+    u(this, "headerBadge");
+    u(this, "logEntries");
+    u(this, "scrollBtn");
+    u(this, "minimizeBtn");
+    u(this, "resetBtn");
+    u(this, "isMinimized", !1);
+    u(this, "isScrolling", !1);
+    u(this, "scrollTimer", null);
+    u(this, "groups", /* @__PURE__ */ new Set());
+    u(this, "pulseTimer", null);
+    u(this, "confirmingReset", !1);
+    u(this, "confirmTimer", null);
+    u(this, "isDragging", !1);
+    u(this, "dragOffX", 0);
+    u(this, "dragOffY", 0);
     this.build(), this.setupDrag();
   }
   // ── Build DOM ──
   build() {
-    var u;
-    (u = document.getElementById("fbs-panel")) == null || u.remove(), this.panel = document.createElement("div"), this.panel.id = "fbs-panel", this.panel.className = "fbs-panel";
+    var h;
+    (h = document.getElementById("fbs-panel")) == null || h.remove(), this.panel = document.createElement("div"), this.panel.id = "fbs-panel", this.panel.className = "fbs-panel";
     const t = document.createElement("div");
     t.className = "fbs-header";
-    const e = document.createElement("span");
-    e.className = "fbs-drag-icon", e.innerHTML = g.grip;
+    const n = document.createElement("span");
+    n.className = "fbs-drag-icon", n.innerHTML = x.grip;
     const i = document.createElement("span");
     i.className = "fbs-title", i.textContent = "FB Scraper", this.statusDot = document.createElement("span"), this.statusDot.className = "fbs-status-dot", this.headerBadge = document.createElement("span"), this.headerBadge.className = "fbs-header-badge", this.headerBadge.textContent = "0";
     const o = document.createElement("div");
-    o.className = "fbs-header-right", this.minimizeBtn = document.createElement("button"), this.minimizeBtn.className = "fbs-icon-btn", this.minimizeBtn.innerHTML = g.minimize, this.minimizeBtn.addEventListener("click", (x) => {
-      x.stopPropagation(), this.toggleMinimize();
-    }), o.appendChild(this.minimizeBtn), t.append(e, i, this.statusDot, this.headerBadge, o), this.body = document.createElement("div"), this.body.className = "fbs-body";
+    o.className = "fbs-header-right", this.minimizeBtn = document.createElement("button"), this.minimizeBtn.className = "fbs-icon-btn", this.minimizeBtn.innerHTML = x.minimize, this.minimizeBtn.title = c.minimize, this.minimizeBtn.setAttribute("aria-label", c.minimize), this.minimizeBtn.addEventListener("click", (y) => {
+      y.stopPropagation(), this.toggleMinimize();
+    }), o.appendChild(this.minimizeBtn), t.append(n, i, this.statusDot, this.headerBadge, o), this.body = document.createElement("div"), this.body.className = "fbs-body";
     const r = document.createElement("div");
     r.className = "fbs-stats", this.counterEl = document.createElement("span"), this.counterEl.className = "fbs-counter", this.counterEl.textContent = "0";
     const s = document.createElement("div");
-    s.className = "fbs-counter-label", s.textContent = "members captured", this.groupCountEl = document.createElement("span"), this.groupCountEl.className = "fbs-group-count", this.groupCountEl.textContent = "from 0 groups", r.append(this.counterEl, s, this.groupCountEl), this.statusEl = document.createElement("div"), this.statusEl.className = "fbs-status", this.statusEl.textContent = "Go to a group's Members tab to start";
-    const c = document.createElement("div");
-    c.className = "fbs-actions";
-    const a = document.createElement("button");
-    a.className = "fbs-btn fbs-btn-primary", a.innerHTML = `${g.download} Download CSV`, a.addEventListener("click", () => this.download());
+    s.className = "fbs-counter-label", s.textContent = c.membersLabel, this.groupCountEl = document.createElement("span"), this.groupCountEl.className = "fbs-group-count", this.groupCountEl.textContent = c.groups(0), r.append(this.counterEl, s, this.groupCountEl), this.statusEl = document.createElement("div"), this.statusEl.className = "fbs-status", this.statusEl.textContent = c.hintStart;
     const l = document.createElement("div");
-    l.className = "fbs-btn-row", this.scrollBtn = document.createElement("button"), this.scrollBtn.className = "fbs-btn fbs-btn-secondary", this.scrollBtn.textContent = "Auto Scroll", this.scrollBtn.addEventListener("click", () => this.toggleAutoScroll()), this.resetBtn = document.createElement("button"), this.resetBtn.className = "fbs-btn fbs-btn-outline", this.resetBtn.textContent = "Reset", this.resetBtn.addEventListener("click", () => this.handleReset()), l.append(this.scrollBtn, this.resetBtn), c.append(a, l);
-    const p = document.createElement("div");
-    p.className = "fbs-log";
+    l.className = "fbs-actions";
+    const a = document.createElement("button");
+    a.className = "fbs-btn fbs-btn-primary", a.innerHTML = x.download, a.append(` ${c.download}`), a.addEventListener("click", () => this.download());
     const d = document.createElement("div");
-    d.className = "fbs-log-title", d.textContent = "Activity", this.logEntries = document.createElement("div"), this.logEntries.className = "fbs-log-entries", p.append(d, this.logEntries), this.body.append(r, this.statusEl, c, p), this.panel.append(t, this.body);
+    d.className = "fbs-btn-row", this.scrollBtn = document.createElement("button"), this.scrollBtn.className = "fbs-btn fbs-btn-secondary", this.scrollBtn.textContent = c.autoScroll, this.scrollBtn.addEventListener("click", () => this.toggleAutoScroll()), this.resetBtn = document.createElement("button"), this.resetBtn.className = "fbs-btn fbs-btn-outline", this.resetBtn.textContent = c.reset, this.resetBtn.addEventListener("click", () => this.handleReset()), d.append(this.scrollBtn, this.resetBtn), l.append(a, d);
+    const m = document.createElement("div");
+    m.className = "fbs-log";
+    const p = document.createElement("div");
+    p.className = "fbs-log-title", p.textContent = c.activity, this.logEntries = document.createElement("div"), this.logEntries.className = "fbs-log-entries", m.append(p, this.logEntries), this.body.append(r, this.statusEl, l, m), this.panel.append(t, this.body);
   }
   // ── Drag ──
   setupDrag() {
-    this.panel.querySelector(".fbs-header").addEventListener("mousedown", (e) => {
-      if (e.target.closest(".fbs-icon-btn")) return;
+    this.panel.querySelector(".fbs-header").addEventListener("mousedown", (n) => {
+      if (n.target.closest(".fbs-icon-btn")) return;
       this.isDragging = !0;
       const i = this.panel.getBoundingClientRect();
-      this.dragOffX = e.clientX - i.left, this.dragOffY = e.clientY - i.top, this.panel.style.transition = "none", e.preventDefault();
-    }), window.addEventListener("mousemove", (e) => {
+      this.dragOffX = n.clientX - i.left, this.dragOffY = n.clientY - i.top, this.panel.style.transition = "none", n.preventDefault();
+    }), window.addEventListener("mousemove", (n) => {
       if (!this.isDragging) return;
-      const i = Math.max(0, Math.min(e.clientX - this.dragOffX, window.innerWidth - 100)), o = Math.max(0, Math.min(e.clientY - this.dragOffY, window.innerHeight - 50));
+      const i = Math.max(0, Math.min(n.clientX - this.dragOffX, window.innerWidth - 100)), o = Math.max(0, Math.min(n.clientY - this.dragOffY, window.innerHeight - 50));
       this.panel.style.right = "auto", this.panel.style.bottom = "auto", this.panel.style.left = i + "px", this.panel.style.top = o + "px";
     }), window.addEventListener("mouseup", () => {
       this.isDragging && (this.isDragging = !1, this.panel.style.transition = "");
@@ -749,135 +803,137 @@ class bt {
   }
   // ── Public ──
   render() {
-    document.body.appendChild(this.panel), K().then(() => this.refreshCounter()).then((t) => {
-      t > 0 ? this.addLog(`Loaded ${t.toLocaleString()} from cache`) : this.addLog("Ready");
+    document.body.appendChild(this.panel), U().then(() => this.refreshCounter()).then((t) => {
+      t > 0 ? this.addLog(c.loadedFromCache(w(t))) : this.addLog(c.ready);
     });
   }
-  async onCapture(t, e) {
-    e && this.groups.add(e), this.groupCountEl.textContent = `from ${this.groups.size} group${this.groups.size !== 1 ? "s" : ""}`, await this.refreshCounter(), this.addLog(`+${t} members`), this.statusDot.classList.add("fbs-dot-active"), this.statusEl.textContent = "Capturing members... keep scrolling!", this.panel.classList.remove("fbs-pulse"), this.panel.offsetWidth, this.panel.classList.add("fbs-pulse"), this.pulseTimer && clearTimeout(this.pulseTimer), this.pulseTimer = setTimeout(() => {
-      this.panel.classList.remove("fbs-pulse"), this.statusDot.classList.remove("fbs-dot-active"), this.statusEl.textContent = "Scroll for more, or download when ready";
+  async onCapture(t, n) {
+    n && this.groups.add(n), this.groupCountEl.textContent = c.groups(this.groups.size), await this.refreshCounter(), this.addLog(c.added(w(t))), this.statusDot.classList.add("fbs-dot-active"), this.statusEl.textContent = c.hintCapturing, this.panel.classList.remove("fbs-pulse"), this.panel.offsetWidth, this.panel.classList.add("fbs-pulse"), this.pulseTimer && clearTimeout(this.pulseTimer), this.pulseTimer = setTimeout(() => {
+      this.panel.classList.remove("fbs-pulse"), this.statusDot.classList.remove("fbs-dot-active"), this.statusEl.textContent = c.hintIdle;
     }, 2500);
   }
   // ── Private ──
   async refreshCounter() {
-    const t = await h.getCount(), e = t.toLocaleString();
-    return this.counterEl.textContent = e, this.headerBadge.textContent = e, t;
+    const t = await g.getCount(), n = w(t);
+    return this.counterEl.textContent = n, this.headerBadge.textContent = n, t;
   }
   addLog(t) {
     var r;
-    const e = document.createElement("div");
-    e.className = "fbs-log-entry";
-    const i = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
+    const n = document.createElement("div");
+    n.className = "fbs-log-entry";
+    const i = (/* @__PURE__ */ new Date()).toLocaleTimeString(c.locale, {
       hour12: !1,
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit"
     }), o = document.createElement("span");
-    for (o.className = "fbs-log-time", o.textContent = i, e.appendChild(o), e.appendChild(document.createTextNode(t)), this.logEntries.prepend(e); this.logEntries.children.length > 50; )
+    for (o.className = "fbs-log-time", o.textContent = i, n.appendChild(o), n.appendChild(document.createTextNode(t)), this.logEntries.prepend(n); this.logEntries.children.length > 50; )
       (r = this.logEntries.lastChild) == null || r.remove();
   }
   toggleMinimize() {
-    this.isMinimized = !this.isMinimized, this.body.style.display = this.isMinimized ? "none" : "", this.minimizeBtn.innerHTML = this.isMinimized ? g.expand : g.minimize;
+    this.isMinimized = !this.isMinimized, this.body.style.display = this.isMinimized ? "none" : "", this.minimizeBtn.innerHTML = this.isMinimized ? x.expand : x.minimize;
+    const t = this.isMinimized ? c.expand : c.minimize;
+    this.minimizeBtn.title = t, this.minimizeBtn.setAttribute("aria-label", t);
   }
   toggleAutoScroll() {
-    this.isScrolling = !this.isScrolling, this.isScrolling ? (this.scrollBtn.textContent = "Stop Scroll", this.scrollBtn.classList.add("fbs-btn-active"), this.scrollTimer = setInterval(() => {
+    this.isScrolling = !this.isScrolling, this.isScrolling ? (this.scrollBtn.textContent = c.stopScroll, this.scrollBtn.classList.add("fbs-btn-active"), this.scrollTimer = setInterval(() => {
       window.scrollTo(0, document.body.scrollHeight);
-    }, 150), this.addLog("Auto-scroll started")) : (this.scrollBtn.textContent = "Auto Scroll", this.scrollBtn.classList.remove("fbs-btn-active"), this.scrollTimer && (clearInterval(this.scrollTimer), this.scrollTimer = null), this.addLog("Auto-scroll stopped"));
+    }, 150), this.addLog(c.scrollStarted)) : (this.scrollBtn.textContent = c.autoScroll, this.scrollBtn.classList.remove("fbs-btn-active"), this.scrollTimer && (clearInterval(this.scrollTimer), this.scrollTimer = null), this.addLog(c.scrollStopped));
   }
   async download() {
-    const t = await h.getCount();
+    const t = await g.getCount();
     if (t === 0) {
-      this.addLog("No data to download");
+      this.addLog(c.noData);
       return;
     }
-    const e = await h.toCsvData(), i = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
+    const n = await g.toCsvData(), i = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
     try {
-      G(`fb-members-${i}.csv`, e), this.addLog(`Downloaded ${t.toLocaleString()} members`);
+      tt(`fb-members-${i}.csv`, n), this.addLog(c.downloaded(w(t)));
     } catch (o) {
-      this.addLog("Download failed"), console.error(o);
+      this.addLog(c.downloadFailed), console.error(o);
     }
   }
   handleReset() {
-    this.confirmingReset ? (this.confirmTimer && clearTimeout(this.confirmTimer), this.cancelReset(), h.clear().then(() => {
-      this.groups.clear(), this.groupCountEl.textContent = "from 0 groups", this.refreshCounter(), this.addLog("All data cleared"), this.statusEl.textContent = "Go to a group's Members tab to start";
-    })) : (this.confirmingReset = !0, this.resetBtn.textContent = "Confirm?", this.resetBtn.classList.add("fbs-confirm"), this.confirmTimer = setTimeout(() => {
+    this.confirmingReset ? (this.confirmTimer && clearTimeout(this.confirmTimer), this.cancelReset(), g.clear().then(() => {
+      this.groups.clear(), this.groupCountEl.textContent = c.groups(0), this.refreshCounter(), this.addLog(c.cleared), this.statusEl.textContent = c.hintStart;
+    })) : (this.confirmingReset = !0, this.resetBtn.textContent = c.confirmReset, this.resetBtn.classList.add("fbs-confirm"), this.confirmTimer = setTimeout(() => {
       this.cancelReset();
     }, 3e3));
   }
   cancelReset() {
-    this.confirmingReset = !1, this.resetBtn.textContent = "Reset", this.resetBtn.classList.remove("fbs-confirm");
+    this.confirmingReset = !1, this.resetBtn.textContent = c.reset, this.resetBtn.classList.remove("fbs-confirm");
   }
 }
-let _;
-function gt(n) {
-  var r, s, c, a, l, p;
+let z;
+function Et(e) {
+  var r, s, l, a, d, m;
   let t;
-  if ((r = n == null ? void 0 : n.data) != null && r.group)
-    t = n.data.group;
-  else if (((c = (s = n == null ? void 0 : n.data) == null ? void 0 : s.node) == null ? void 0 : c.__typename) === "Group")
-    t = n.data.node;
+  if ((r = e == null ? void 0 : e.data) != null && r.group)
+    t = e.data.group;
+  else if (((l = (s = e == null ? void 0 : e.data) == null ? void 0 : s.node) == null ? void 0 : l.__typename) === "Group")
+    t = e.data.node;
   else
     return;
-  let e;
+  let n;
   if ((a = t == null ? void 0 : t.new_members) != null && a.edges)
-    e = t.new_members.edges;
-  else if ((l = t == null ? void 0 : t.new_forum_members) != null && l.edges)
-    e = t.new_forum_members.edges;
-  else if ((p = t == null ? void 0 : t.search_results) != null && p.edges)
-    e = t.search_results.edges;
+    n = t.new_members.edges;
+  else if ((d = t == null ? void 0 : t.new_forum_members) != null && d.edges)
+    n = t.new_forum_members.edges;
+  else if ((m = t == null ? void 0 : t.search_results) != null && m.edges)
+    n = t.search_results.edges;
   else
     return;
   const i = [];
   let o;
-  e.forEach((d) => {
-    var T, M, O, z, R;
-    const u = d.node.__isEntity === "GroupUserInvite" ? d.node.invitee_profile : d.node;
-    if (!u) return;
-    const { id: x, name: U, bio_text: w, url: X, profile_picture: v, __isProfile: Y } = u, J = ((T = d == null ? void 0 : d.join_status_text) == null ? void 0 : T.text) || ((O = (M = d == null ? void 0 : d.membership) == null ? void 0 : M.join_status_text) == null ? void 0 : O.text), E = (R = (z = u.group_membership) == null ? void 0 : z.associated_group) == null ? void 0 : R.id;
-    E && (o = E), i.push([x, {
-      profileId: x,
-      fullName: U,
-      profileLink: X,
-      bio: (w == null ? void 0 : w.text) || "",
-      imageSrc: (v == null ? void 0 : v.uri) || "",
-      groupId: E || "",
-      groupJoiningText: J || "",
-      profileType: Y || ""
+  n.forEach((p) => {
+    var M, O, R, N, A;
+    const h = p.node.__isEntity === "GroupUserInvite" ? p.node.invitee_profile : p.node;
+    if (!h) return;
+    const { id: y, name: Y, bio_text: E, url: J, profile_picture: C, __isProfile: q } = h, Z = ((M = p == null ? void 0 : p.join_status_text) == null ? void 0 : M.text) || ((R = (O = p == null ? void 0 : p.membership) == null ? void 0 : O.join_status_text) == null ? void 0 : R.text), S = (A = (N = h.group_membership) == null ? void 0 : N.associated_group) == null ? void 0 : A.id;
+    S && (o = S), i.push([y, {
+      profileId: y,
+      fullName: Y,
+      profileLink: J,
+      bio: (E == null ? void 0 : E.text) || "",
+      imageSrc: (C == null ? void 0 : C.uri) || "",
+      groupId: S || "",
+      groupJoiningText: Z || "",
+      profileType: q || ""
     }]);
-  }), i.length > 0 && K().then(() => h.addElems(i)).then((d) => {
-    typeof d == "number" && d > 0 && _.onCapture(d, o);
+  }), i.length > 0 && U().then(() => g.addElems(i)).then((p) => {
+    typeof p == "number" && p > 0 && z.onCapture(p, o);
   });
 }
-function H(n) {
+function W(e) {
   const t = [];
   try {
-    t.push(JSON.parse(n));
+    t.push(JSON.parse(e));
   } catch {
-    const e = n.split(`
+    const n = e.split(`
 `);
-    if (e.length <= 1) return;
-    for (const i of e)
+    if (n.length <= 1) return;
+    for (const i of n)
       try {
         t.push(JSON.parse(i));
       } catch {
       }
   }
-  for (const e of t)
-    gt(e);
+  for (const n of t)
+    Et(n);
 }
-function xt() {
-  ht(), _ = new bt(), _.render();
-  const n = "/api/graphql/", t = XMLHttpRequest.prototype.open;
+function Ct() {
+  xt(), z = new vt(), z.render();
+  const e = "/api/graphql/", t = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function() {
     this.addEventListener("readystatechange", function() {
-      this.responseURL.includes(n) && this.readyState === 4 && H(this.responseText);
+      this.responseURL.includes(e) && this.readyState === 4 && W(this.responseText);
     }, !1), t.apply(this, arguments);
   };
-  const e = window.fetch;
+  const n = window.fetch;
   window.fetch = async function(...i) {
-    const o = await e.apply(this, i);
-    return (typeof i[0] == "string" ? i[0] : i[0] instanceof Request ? i[0].url : "").includes(n) && o.clone().text().then((c) => H(c)).catch(() => {
+    const o = await n.apply(this, i);
+    return (typeof i[0] == "string" ? i[0] : i[0] instanceof Request ? i[0].url : "").includes(e) && o.clone().text().then((l) => W(l)).catch(() => {
     }), o;
   };
 }
-xt();
+Ct();

@@ -33,11 +33,15 @@ const store = new FBStorage();
 
 // ListStorage opens IndexedDB asynchronously and exposes no ready promise;
 // reading before it opens silently falls back to an empty in-memory map.
-async function waitForStore(timeoutMs = 5000): Promise<void> {
-    const start = Date.now();
-    while (store.persistent && !store.db && Date.now() - start < timeoutMs) {
-        await new Promise(r => setTimeout(r, 50));
-    }
+// Shared so callbacks run in registration order: the startup count reads before the first write.
+let storeReady: Promise<void> | null = null;
+function waitForStore(timeoutMs = 5000): Promise<void> {
+    return storeReady ??= (async () => {
+        const start = Date.now();
+        while (store.persistent && !store.db && Date.now() - start < timeoutMs) {
+            await new Promise(r => setTimeout(r, 50));
+        }
+    })();
 }
 
 // ── Styles ───────────────────────────────────
@@ -334,6 +338,66 @@ const ICONS = {
     download: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
 } as const;
 
+// ── Text ─────────────────────────────────────
+
+const TEXT = {
+    en: {
+        locale: 'en-US',
+        membersLabel: 'members captured',
+        groups: (n: number) => `from ${n} group${n !== 1 ? 's' : ''}`,
+        hintStart: "Go to a group's Members tab to start",
+        hintCapturing: 'Capturing members... keep scrolling!',
+        hintIdle: 'Scroll for more, or download when ready',
+        download: 'Download CSV',
+        autoScroll: 'Auto Scroll',
+        stopScroll: 'Stop Scroll',
+        reset: 'Reset',
+        confirmReset: 'Confirm?',
+        minimize: 'Minimize',
+        expand: 'Expand',
+        activity: 'Activity',
+        ready: 'Ready',
+        loadedFromCache: (n: string) => `Loaded ${n} from cache`,
+        added: (n: string) => `+${n} members`,
+        scrollStarted: 'Auto-scroll started',
+        scrollStopped: 'Auto-scroll stopped',
+        noData: 'No data to download',
+        downloaded: (n: string) => `Downloaded ${n} members`,
+        downloadFailed: 'Download failed',
+        cleared: 'All data cleared',
+    },
+    vi: {
+        locale: 'vi-VN',
+        membersLabel: 'thành viên đã lấy',
+        groups: (n: number) => `từ ${n} nhóm`,
+        hintStart: 'Mở tab Mọi người của nhóm để bắt đầu',
+        hintCapturing: 'Đang lấy thành viên... cứ cuộn tiếp!',
+        hintIdle: 'Cuộn thêm để lấy tiếp, hoặc tải CSV khi đủ',
+        download: 'Tải CSV',
+        autoScroll: 'Tự động cuộn',
+        stopScroll: 'Dừng cuộn',
+        reset: 'Xóa dữ liệu',
+        confirmReset: 'Xác nhận xóa?',
+        minimize: 'Thu nhỏ',
+        expand: 'Mở rộng',
+        activity: 'Hoạt động',
+        ready: 'Sẵn sàng',
+        loadedFromCache: (n: string) => `Đã nạp ${n} người từ bộ nhớ`,
+        added: (n: string) => `+${n} thành viên`,
+        scrollStarted: 'Bắt đầu tự động cuộn',
+        scrollStopped: 'Đã dừng tự động cuộn',
+        noData: 'Chưa có dữ liệu để tải',
+        downloaded: (n: string) => `Đã tải xuống ${n} thành viên`,
+        downloadFailed: 'Tải xuống thất bại',
+        cleared: 'Đã xóa toàn bộ dữ liệu',
+    },
+};
+
+// Follow Facebook's display language; anything other than Vietnamese gets English.
+const LANG = (document.documentElement.lang || navigator.language || '').toLowerCase().startsWith('vi') ? 'vi' : 'en';
+const T = TEXT[LANG];
+const fmtNum = (n: number) => n.toLocaleString(T.locale);
+
 // ── UI Panel ─────────────────────────────────
 
 class ScraperPanel {
@@ -401,6 +465,8 @@ class ScraperPanel {
         this.minimizeBtn = document.createElement('button');
         this.minimizeBtn.className = 'fbs-icon-btn';
         this.minimizeBtn.innerHTML = ICONS.minimize;
+        this.minimizeBtn.title = T.minimize;
+        this.minimizeBtn.setAttribute('aria-label', T.minimize);
         this.minimizeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggleMinimize();
@@ -423,18 +489,18 @@ class ScraperPanel {
 
         const counterLabel = document.createElement('div');
         counterLabel.className = 'fbs-counter-label';
-        counterLabel.textContent = 'members captured';
+        counterLabel.textContent = T.membersLabel;
 
         this.groupCountEl = document.createElement('span');
         this.groupCountEl.className = 'fbs-group-count';
-        this.groupCountEl.textContent = 'from 0 groups';
+        this.groupCountEl.textContent = T.groups(0);
 
         stats.append(this.counterEl, counterLabel, this.groupCountEl);
 
         // Status hint
         this.statusEl = document.createElement('div');
         this.statusEl.className = 'fbs-status';
-        this.statusEl.textContent = "Go to a group's Members tab to start";
+        this.statusEl.textContent = T.hintStart;
 
         // Action buttons
         const actions = document.createElement('div');
@@ -442,7 +508,8 @@ class ScraperPanel {
 
         const downloadBtn = document.createElement('button');
         downloadBtn.className = 'fbs-btn fbs-btn-primary';
-        downloadBtn.innerHTML = `${ICONS.download} Download CSV`;
+        downloadBtn.innerHTML = ICONS.download;
+        downloadBtn.append(` ${T.download}`);
         downloadBtn.addEventListener('click', () => this.download());
 
         const btnRow = document.createElement('div');
@@ -450,12 +517,12 @@ class ScraperPanel {
 
         this.scrollBtn = document.createElement('button');
         this.scrollBtn.className = 'fbs-btn fbs-btn-secondary';
-        this.scrollBtn.textContent = 'Auto Scroll';
+        this.scrollBtn.textContent = T.autoScroll;
         this.scrollBtn.addEventListener('click', () => this.toggleAutoScroll());
 
         this.resetBtn = document.createElement('button');
         this.resetBtn.className = 'fbs-btn fbs-btn-outline';
-        this.resetBtn.textContent = 'Reset';
+        this.resetBtn.textContent = T.reset;
         this.resetBtn.addEventListener('click', () => this.handleReset());
 
         btnRow.append(this.scrollBtn, this.resetBtn);
@@ -467,7 +534,7 @@ class ScraperPanel {
 
         const logTitle = document.createElement('div');
         logTitle.className = 'fbs-log-title';
-        logTitle.textContent = 'Activity';
+        logTitle.textContent = T.activity;
 
         this.logEntries = document.createElement('div');
         this.logEntries.className = 'fbs-log-entries';
@@ -518,21 +585,21 @@ class ScraperPanel {
         document.body.appendChild(this.panel);
         waitForStore().then(() => this.refreshCounter()).then(count => {
             if (count > 0) {
-                this.addLog(`Loaded ${count.toLocaleString()} from cache`);
+                this.addLog(T.loadedFromCache(fmtNum(count)));
             } else {
-                this.addLog('Ready');
+                this.addLog(T.ready);
             }
         });
     }
 
     async onCapture(addedCount: number, groupId?: string) {
         if (groupId) this.groups.add(groupId);
-        this.groupCountEl.textContent = `from ${this.groups.size} group${this.groups.size !== 1 ? 's' : ''}`;
+        this.groupCountEl.textContent = T.groups(this.groups.size);
         await this.refreshCounter();
-        this.addLog(`+${addedCount} members`);
+        this.addLog(T.added(fmtNum(addedCount)));
 
         this.statusDot.classList.add('fbs-dot-active');
-        this.statusEl.textContent = 'Capturing members... keep scrolling!';
+        this.statusEl.textContent = T.hintCapturing;
 
         this.panel.classList.remove('fbs-pulse');
         void this.panel.offsetWidth;
@@ -542,7 +609,7 @@ class ScraperPanel {
         this.pulseTimer = setTimeout(() => {
             this.panel.classList.remove('fbs-pulse');
             this.statusDot.classList.remove('fbs-dot-active');
-            this.statusEl.textContent = 'Scroll for more, or download when ready';
+            this.statusEl.textContent = T.hintIdle;
         }, 2500);
     }
 
@@ -550,7 +617,7 @@ class ScraperPanel {
 
     private async refreshCounter(): Promise<number> {
         const count = await store.getCount();
-        const fmt = count.toLocaleString();
+        const fmt = fmtNum(count);
         this.counterEl.textContent = fmt;
         this.headerBadge.textContent = fmt;
         return count;
@@ -559,7 +626,7 @@ class ScraperPanel {
     private addLog(msg: string) {
         const entry = document.createElement('div');
         entry.className = 'fbs-log-entry';
-        const time = new Date().toLocaleTimeString('en-US', {
+        const time = new Date().toLocaleTimeString(T.locale, {
             hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
         });
         const timeSpan = document.createElement('span');
@@ -577,41 +644,44 @@ class ScraperPanel {
         this.isMinimized = !this.isMinimized;
         this.body.style.display = this.isMinimized ? 'none' : '';
         this.minimizeBtn.innerHTML = this.isMinimized ? ICONS.expand : ICONS.minimize;
+        const label = this.isMinimized ? T.expand : T.minimize;
+        this.minimizeBtn.title = label;
+        this.minimizeBtn.setAttribute('aria-label', label);
     }
 
     private toggleAutoScroll() {
         this.isScrolling = !this.isScrolling;
         if (this.isScrolling) {
-            this.scrollBtn.textContent = 'Stop Scroll';
+            this.scrollBtn.textContent = T.stopScroll;
             this.scrollBtn.classList.add('fbs-btn-active');
             this.scrollTimer = setInterval(() => {
                 window.scrollTo(0, document.body.scrollHeight);
             }, 150);
-            this.addLog('Auto-scroll started');
+            this.addLog(T.scrollStarted);
         } else {
-            this.scrollBtn.textContent = 'Auto Scroll';
+            this.scrollBtn.textContent = T.autoScroll;
             this.scrollBtn.classList.remove('fbs-btn-active');
             if (this.scrollTimer) {
                 clearInterval(this.scrollTimer);
                 this.scrollTimer = null;
             }
-            this.addLog('Auto-scroll stopped');
+            this.addLog(T.scrollStopped);
         }
     }
 
     private async download() {
         const count = await store.getCount();
         if (count === 0) {
-            this.addLog('No data to download');
+            this.addLog(T.noData);
             return;
         }
         const data = await store.toCsvData();
         const ts = new Date().toISOString().replace(/[:.]/g, '-');
         try {
             exportToCsv(`fb-members-${ts}.csv`, data);
-            this.addLog(`Downloaded ${count.toLocaleString()} members`);
+            this.addLog(T.downloaded(fmtNum(count)));
         } catch (err) {
-            this.addLog('Download failed');
+            this.addLog(T.downloadFailed);
             console.error(err);
         }
     }
@@ -619,7 +689,7 @@ class ScraperPanel {
     private handleReset() {
         if (!this.confirmingReset) {
             this.confirmingReset = true;
-            this.resetBtn.textContent = 'Confirm?';
+            this.resetBtn.textContent = T.confirmReset;
             this.resetBtn.classList.add('fbs-confirm');
             this.confirmTimer = setTimeout(() => {
                 this.cancelReset();
@@ -629,17 +699,17 @@ class ScraperPanel {
             this.cancelReset();
             store.clear().then(() => {
                 this.groups.clear();
-                this.groupCountEl.textContent = 'from 0 groups';
+                this.groupCountEl.textContent = T.groups(0);
                 this.refreshCounter();
-                this.addLog('All data cleared');
-                this.statusEl.textContent = "Go to a group's Members tab to start";
+                this.addLog(T.cleared);
+                this.statusEl.textContent = T.hintStart;
             });
         }
     }
 
     private cancelReset() {
         this.confirmingReset = false;
-        this.resetBtn.textContent = 'Reset';
+        this.resetBtn.textContent = T.reset;
         this.resetBtn.classList.remove('fbs-confirm');
     }
 }
