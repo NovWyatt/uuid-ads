@@ -31,6 +31,15 @@ class FBStorage extends ListStorage<FBMember> {
 
 const store = new FBStorage();
 
+// ListStorage opens IndexedDB asynchronously and exposes no ready promise;
+// reading before it opens silently falls back to an empty in-memory map.
+async function waitForStore(timeoutMs = 5000): Promise<void> {
+    const start = Date.now();
+    while (store.persistent && !store.db && Date.now() - start < timeoutMs) {
+        await new Promise(r => setTimeout(r, 50));
+    }
+}
+
 // ── Styles ───────────────────────────────────
 
 const CSS = `
@@ -507,7 +516,7 @@ class ScraperPanel {
 
     render() {
         document.body.appendChild(this.panel);
-        this.refreshCounter().then(count => {
+        waitForStore().then(() => this.refreshCounter()).then(count => {
             if (count > 0) {
                 this.addLog(`Loaded ${count.toLocaleString()} from cache`);
             } else {
@@ -689,7 +698,7 @@ function processResponse(dataGraphQL: any): void {
     });
 
     if (toAdd.length > 0) {
-        store.addElems(toAdd).then((addedCount) => {
+        waitForStore().then(() => store.addElems(toAdd)).then((addedCount) => {
             if (typeof addedCount === 'number' && addedCount > 0) {
                 ui.onCapture(addedCount, groupId);
             }

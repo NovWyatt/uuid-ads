@@ -1,7 +1,7 @@
-var J = Object.defineProperty;
-var q = (n, t, e) => t in n ? J(n, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : n[t] = e;
-var m = (n, t, e) => q(n, typeof t != "symbol" ? t + "" : t, e);
-function Z(n, t) {
+var q = Object.defineProperty;
+var Z = (n, t, e) => t in n ? q(n, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : n[t] = e;
+var m = (n, t, e) => Z(n, typeof t != "symbol" ? t + "" : t, e);
+function G(n, t) {
   for (var e = function(a) {
     for (var l = "", p = 0; p < a.length; p++) {
       var d = a[p] === null || typeof a[p] > "u" ? "" : a[p].toString();
@@ -21,7 +21,7 @@ function Z(n, t) {
 }
 const C = (n, t) => t.some((e) => n instanceof e);
 let A, N;
-function G() {
+function Q() {
   return A || (A = [
     IDBIndex,
     IDBObjectStore,
@@ -30,16 +30,16 @@ function G() {
     IDBTransaction
   ]);
 }
-function Q() {
+function tt() {
   return N || (N = ["advance", "continue", "continuePrimaryKey"].map((n) => IDBCursor.prototype[n]));
 }
 const S = /* @__PURE__ */ new WeakMap(), B = /* @__PURE__ */ new WeakMap(), y = /* @__PURE__ */ new WeakMap();
-function tt(n) {
+function et(n) {
   const t = new Promise((e, i) => {
     const o = () => {
       n.removeEventListener("success", r), n.removeEventListener("error", s);
     }, r = () => {
-      e(h(n.result)), o();
+      e(b(n.result)), o();
     }, s = () => {
       i(n.error), o();
     };
@@ -47,7 +47,7 @@ function tt(n) {
   });
   return y.set(t, n), t;
 }
-function et(n) {
+function nt(n) {
   if (S.has(n))
     return;
   const t = new Promise((e, i) => {
@@ -70,7 +70,7 @@ let D = {
       if (t === "store")
         return e.objectStoreNames[1] ? void 0 : e.objectStore(e.objectStoreNames[0]);
     }
-    return h(n[t]);
+    return b(n[t]);
   },
   set(n, t, e) {
     return n[t] = e, !0;
@@ -82,29 +82,29 @@ let D = {
 function W(n) {
   D = n(D);
 }
-function nt(n) {
-  return Q().includes(n) ? function(...t) {
-    return n.apply(I(this), t), h(this.request);
+function it(n) {
+  return tt().includes(n) ? function(...t) {
+    return n.apply(I(this), t), b(this.request);
   } : function(...t) {
-    return h(n.apply(I(this), t));
+    return b(n.apply(I(this), t));
   };
 }
-function it(n) {
-  return typeof n == "function" ? nt(n) : (n instanceof IDBTransaction && et(n), C(n, G()) ? new Proxy(n, D) : n);
+function ot(n) {
+  return typeof n == "function" ? it(n) : (n instanceof IDBTransaction && nt(n), C(n, Q()) ? new Proxy(n, D) : n);
 }
-function h(n) {
+function b(n) {
   if (n instanceof IDBRequest)
-    return tt(n);
+    return et(n);
   if (B.has(n))
     return B.get(n);
-  const t = it(n);
+  const t = ot(n);
   return Object.is(t, n) || (B.set(n, t), y.set(t, n)), t;
 }
 const I = (n) => y.get(n);
-function ot(n, t, { blocked: e, upgrade: i, blocking: o, terminated: r } = {}) {
-  const s = indexedDB.open(n, t), c = h(s);
+function rt(n, t, { blocked: e, upgrade: i, blocking: o, terminated: r } = {}) {
+  const s = indexedDB.open(n, t), c = b(s);
   return i && s.addEventListener("upgradeneeded", (a) => {
-    i(h(s.result), a.oldVersion, a.newVersion, h(s.transaction), a);
+    i(b(s.result), a.oldVersion, a.newVersion, b(s.transaction), a);
   }), e && s.addEventListener("blocked", (a) => e(
     // Casting due to https://github.com/microsoft/TypeScript-DOM-lib-generator/pull/1405
     a.oldVersion,
@@ -115,16 +115,16 @@ function ot(n, t, { blocked: e, upgrade: i, blocking: o, terminated: r } = {}) {
   }).catch(() => {
   }), c;
 }
-const rt = ["get", "getKey", "getAll", "getAllKeys", "count"], st = ["put", "add", "delete", "clear"], k = {};
+const st = ["get", "getKey", "getAll", "getAllKeys", "count"], at = ["put", "add", "delete", "clear"], k = {};
 function P(n, t) {
   if (!(n instanceof IDBDatabase && !(t in n) && typeof t == "string"))
     return;
   if (k[t])
     return k[t];
-  const e = t.replace(/FromIndex$/, ""), i = t !== e, o = st.includes(e);
+  const e = t.replace(/FromIndex$/, ""), i = t !== e, o = at.includes(e);
   if (
     // Bail if the target doesn't exist on the target. Eg, getAll isn't in Edge.
-    !(e in (i ? IDBIndex : IDBObjectStore).prototype) || !(o || rt.includes(e))
+    !(e in (i ? IDBIndex : IDBObjectStore).prototype) || !(o || st.includes(e))
   )
     return;
   const r = async function(s, ...c) {
@@ -142,9 +142,9 @@ W((n) => ({
   get: (t, e, i) => P(t, e) || n.get(t, e, i),
   has: (t, e) => !!P(t, e) || n.has(t, e)
 }));
-const at = ["advance", "continue", "continuePrimaryKey"], j = {}, L = /* @__PURE__ */ new WeakMap(), $ = /* @__PURE__ */ new WeakMap(), ct = {
+const ct = ["advance", "continue", "continuePrimaryKey"], j = {}, L = /* @__PURE__ */ new WeakMap(), $ = /* @__PURE__ */ new WeakMap(), lt = {
   get(n, t) {
-    if (!at.includes(t))
+    if (!ct.includes(t))
       return n[t];
     let e = j[t];
     return e || (e = j[t] = function(...i) {
@@ -152,12 +152,12 @@ const at = ["advance", "continue", "continuePrimaryKey"], j = {}, L = /* @__PURE
     }), e;
   }
 };
-async function* lt(...n) {
+async function* dt(...n) {
   let t = this;
   if (t instanceof IDBCursor || (t = await t.openCursor(...n)), !t)
     return;
   t = t;
-  const e = new Proxy(t, ct);
+  const e = new Proxy(t, lt);
   for ($.set(e, t), y.set(e, I(t)); t; )
     yield e, t = await (L.get(e) || t.continue()), L.delete(e);
 }
@@ -167,7 +167,7 @@ function F(n, t) {
 W((n) => ({
   ...n,
   get(t, e, i) {
-    return F(t, e) ? lt : n.get(t, e, i);
+    return F(t, e) ? dt : n.get(t, e, i);
   },
   has(t, e) {
     return F(t, e) || n.has(t, e);
@@ -199,7 +199,7 @@ var f = function(n, t, e, i) {
     }
     l((i = i.apply(n, t || [])).next());
   });
-}, dt = function(n, t) {
+}, pt = function(n, t) {
   var e = {};
   for (var i in n) Object.prototype.hasOwnProperty.call(n, i) && t.indexOf(i) < 0 && (e[i] = n[i]);
   if (n != null && typeof Object.getOwnPropertySymbols == "function")
@@ -207,7 +207,7 @@ var f = function(n, t, e, i) {
       t.indexOf(i[o]) < 0 && Object.prototype.propertyIsEnumerable.call(n, i[o]) && (e[i[o]] = n[i[o]]);
   return e;
 };
-class pt {
+class mt {
   constructor(t) {
     this.name = "scrape-storage", this.persistent = !0, this.data = /* @__PURE__ */ new Map(), t != null && t.name && (this.name = t.name), t != null && t.persistent && (this.persistent = t.persistent), this.initDB().then(() => {
     }).catch(() => {
@@ -219,7 +219,7 @@ class pt {
   }
   initDB() {
     return f(this, void 0, void 0, function* () {
-      this.db = yield ot(this.storageKey, 6, {
+      this.db = yield rt(this.storageKey, 6, {
         upgrade(t, e, i, o) {
           let r;
           if (e < 5)
@@ -333,7 +333,7 @@ class pt {
       if (this.persistent && this.db) {
         const t = /* @__PURE__ */ new Map(), e = yield this.db.getAll("data");
         return e && e.forEach((i) => {
-          const { _id: o } = i, r = dt(i, ["_id"]);
+          const { _id: o } = i, r = pt(i, ["_id"]);
           t.set(o, r);
         }), t;
       } else
@@ -357,7 +357,7 @@ var V;
 (function(n) {
   n.ADD = "add", n.LOG = "log";
 })(V || (V = {}));
-class mt extends pt {
+class ut extends mt {
   constructor() {
     super(...arguments);
     m(this, "name", "fb-scrape-storage");
@@ -387,7 +387,13 @@ class mt extends pt {
     ];
   }
 }
-const b = new mt(), ut = `
+const h = new ut();
+async function K(n = 5e3) {
+  const t = Date.now();
+  for (; h.persistent && !h.db && Date.now() - t < n; )
+    await new Promise((e) => setTimeout(e, 50));
+}
+const ft = `
 @keyframes fbs-slide-in {
     from { opacity: 0; transform: translateY(20px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -661,10 +667,10 @@ const b = new mt(), ut = `
     flex-shrink: 0 !important;
 }
 `;
-function ft() {
+function ht() {
   if (document.getElementById("fbs-styles")) return;
   const n = document.createElement("style");
-  n.id = "fbs-styles", n.textContent = ut, document.head.appendChild(n);
+  n.id = "fbs-styles", n.textContent = ft, document.head.appendChild(n);
 }
 const g = {
   grip: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>',
@@ -672,7 +678,7 @@ const g = {
   expand: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>',
   download: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
 };
-class ht {
+class bt {
   constructor() {
     m(this, "panel");
     m(this, "body");
@@ -743,7 +749,7 @@ class ht {
   }
   // ── Public ──
   render() {
-    document.body.appendChild(this.panel), this.refreshCounter().then((t) => {
+    document.body.appendChild(this.panel), K().then(() => this.refreshCounter()).then((t) => {
       t > 0 ? this.addLog(`Loaded ${t.toLocaleString()} from cache`) : this.addLog("Ready");
     });
   }
@@ -754,7 +760,7 @@ class ht {
   }
   // ── Private ──
   async refreshCounter() {
-    const t = await b.getCount(), e = t.toLocaleString();
+    const t = await h.getCount(), e = t.toLocaleString();
     return this.counterEl.textContent = e, this.headerBadge.textContent = e, t;
   }
   addLog(t) {
@@ -779,20 +785,20 @@ class ht {
     }, 150), this.addLog("Auto-scroll started")) : (this.scrollBtn.textContent = "Auto Scroll", this.scrollBtn.classList.remove("fbs-btn-active"), this.scrollTimer && (clearInterval(this.scrollTimer), this.scrollTimer = null), this.addLog("Auto-scroll stopped"));
   }
   async download() {
-    const t = await b.getCount();
+    const t = await h.getCount();
     if (t === 0) {
       this.addLog("No data to download");
       return;
     }
-    const e = await b.toCsvData(), i = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
+    const e = await h.toCsvData(), i = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
     try {
-      Z(`fb-members-${i}.csv`, e), this.addLog(`Downloaded ${t.toLocaleString()} members`);
+      G(`fb-members-${i}.csv`, e), this.addLog(`Downloaded ${t.toLocaleString()} members`);
     } catch (o) {
       this.addLog("Download failed"), console.error(o);
     }
   }
   handleReset() {
-    this.confirmingReset ? (this.confirmTimer && clearTimeout(this.confirmTimer), this.cancelReset(), b.clear().then(() => {
+    this.confirmingReset ? (this.confirmTimer && clearTimeout(this.confirmTimer), this.cancelReset(), h.clear().then(() => {
       this.groups.clear(), this.groupCountEl.textContent = "from 0 groups", this.refreshCounter(), this.addLog("All data cleared"), this.statusEl.textContent = "Go to a group's Members tab to start";
     })) : (this.confirmingReset = !0, this.resetBtn.textContent = "Confirm?", this.resetBtn.classList.add("fbs-confirm"), this.confirmTimer = setTimeout(() => {
       this.cancelReset();
@@ -827,18 +833,18 @@ function gt(n) {
     var T, M, O, z, R;
     const u = d.node.__isEntity === "GroupUserInvite" ? d.node.invitee_profile : d.node;
     if (!u) return;
-    const { id: x, name: K, bio_text: v, url: U, profile_picture: w, __isProfile: X } = u, Y = ((T = d == null ? void 0 : d.join_status_text) == null ? void 0 : T.text) || ((O = (M = d == null ? void 0 : d.membership) == null ? void 0 : M.join_status_text) == null ? void 0 : O.text), E = (R = (z = u.group_membership) == null ? void 0 : z.associated_group) == null ? void 0 : R.id;
+    const { id: x, name: U, bio_text: w, url: X, profile_picture: v, __isProfile: Y } = u, J = ((T = d == null ? void 0 : d.join_status_text) == null ? void 0 : T.text) || ((O = (M = d == null ? void 0 : d.membership) == null ? void 0 : M.join_status_text) == null ? void 0 : O.text), E = (R = (z = u.group_membership) == null ? void 0 : z.associated_group) == null ? void 0 : R.id;
     E && (o = E), i.push([x, {
       profileId: x,
-      fullName: K,
-      profileLink: U,
-      bio: (v == null ? void 0 : v.text) || "",
-      imageSrc: (w == null ? void 0 : w.uri) || "",
+      fullName: U,
+      profileLink: X,
+      bio: (w == null ? void 0 : w.text) || "",
+      imageSrc: (v == null ? void 0 : v.uri) || "",
       groupId: E || "",
-      groupJoiningText: Y || "",
-      profileType: X || ""
+      groupJoiningText: J || "",
+      profileType: Y || ""
     }]);
-  }), i.length > 0 && b.addElems(i).then((d) => {
+  }), i.length > 0 && K().then(() => h.addElems(i)).then((d) => {
     typeof d == "number" && d > 0 && _.onCapture(d, o);
   });
 }
@@ -859,8 +865,8 @@ function H(n) {
   for (const e of t)
     gt(e);
 }
-function bt() {
-  ft(), _ = new ht(), _.render();
+function xt() {
+  ht(), _ = new bt(), _.render();
   const n = "/api/graphql/", t = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function() {
     this.addEventListener("readystatechange", function() {
@@ -874,4 +880,4 @@ function bt() {
     }), o;
   };
 }
-bt();
+xt();
