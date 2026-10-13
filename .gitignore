@@ -3,4 +3,6 @@ node_modules
 build
 npm-debug.log
 yarn-error.log
+# This repository uses yarn; yarn.lock is the lockfile.
+package-lock.json
 **/.DS_Store
