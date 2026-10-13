@@ -2,21 +2,40 @@
   "manifest_version": 3,
   "name": "FB Group Members Scraper",
   "short_name": "FB Scraper",
-  "version": "1.0.0",
-  "description": "Export Facebook group members to CSV. Free and open source, everything stays in your browser. Not affiliated with Meta.",
-  "minimum_chrome_version": "111",
+  "version": "1.1.0",
+  "description": "Export Facebook group members to Excel or CSV. Needs a license key. Member data stays in your browser. Not affiliated with Meta.",
+  "minimum_chrome_version": "137",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
+  "action": {
+    "default_title": "FB Scraper license",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["storage"],
+  "host_permissions": ["https://license.wyattos.cyou/*"],
   "content_scripts": [
     {
       "matches": ["https://www.facebook.com/*", "https://web.facebook.com/*"],
       "js": ["content.js"],
       "run_at": "document_start",
       "world": "MAIN"
+    },
+    {
+      "matches": ["https://www.facebook.com/*", "https://web.facebook.com/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start"
     }
   ]
 }

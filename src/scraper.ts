@@ -340,6 +340,28 @@ const CSS = `
     flex-shrink: 0 !important;
 }
 
+/* ── License lock ── */
+.fbs-lock {
+    display: grid !important;
+    gap: 10px !important;
+    padding: 18px 14px 14px !important;
+    text-align: center !important;
+}
+.fbs-lock[hidden], .fbs-content[hidden] { display: none !important; }
+.fbs-lock-title {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: var(--fbs-text) !important;
+}
+.fbs-lock-text {
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    color: var(--fbs-text-2) !important;
+}
+/* The primary button spans 4 of the action grid's columns; here it would create 4 implicit ones. */
+.fbs-lock .fbs-btn { width: 100% !important; grid-column: auto !important; }
+.fbs-panel.fbs-locked .fbs-badge { display: none !important; }
+
 @media (prefers-reduced-motion: reduce) {
     .fbs-panel, .fbs-panel.fbs-pulse, .fbs-dot.fbs-dot-on { animation: none !important; }
     .fbs-panel * { transition: none !important; }
@@ -384,6 +406,20 @@ const TEXT = {
         downloaded: (n: string, kind: string) => `Downloaded ${n} members (${kind})`,
         downloadFailed: 'Download failed',
         cleared: 'All data cleared',
+        lockTitle: 'License required',
+        lockActivate: 'Enter license key',
+        lockRetry: 'Check again',
+        lockStates: {
+            checking: 'Checking your license...',
+            needs_activation: 'Enter your license key to start collecting group members.',
+            expired: 'Your license key has expired. Enter a new key to continue.',
+            revoked: 'Your license key has been revoked. Contact the seller for a new key.',
+            network_error: 'Connect to the Internet so your license key can be checked again.',
+            clock_behind: "Your computer's clock is behind. Fix the date and time, then check again.",
+            invalid: 'The saved license is not valid on this browser. Enter your key again.',
+            unavailable: 'The extension is not responding. Reload this page.',
+        } as Record<string, string>,
+        licenseActivated: 'License activated',
     },
     vi: {
         locale: 'vi-VN',
@@ -412,6 +448,20 @@ const TEXT = {
         downloaded: (n: string, kind: string) => `Đã tải xuống ${n} thành viên (${kind})`,
         downloadFailed: 'Tải xuống thất bại',
         cleared: 'Đã xóa toàn bộ dữ liệu',
+        lockTitle: 'Cần key bản quyền',
+        lockActivate: 'Nhập key bản quyền',
+        lockRetry: 'Kiểm tra lại',
+        lockStates: {
+            checking: 'Đang kiểm tra bản quyền...',
+            needs_activation: 'Nhập key bản quyền để bắt đầu lấy danh sách thành viên nhóm.',
+            expired: 'Key bản quyền đã hết hạn. Nhập key mới để dùng tiếp.',
+            revoked: 'Key bản quyền đã bị thu hồi. Liên hệ người bán để nhận key mới.',
+            network_error: 'Cần kết nối Internet để xác thực lại key bản quyền.',
+            clock_behind: 'Ngày giờ trên máy đang bị lùi. Chỉnh lại ngày giờ rồi kiểm tra lại.',
+            invalid: 'Bản quyền đã lưu không hợp lệ trên trình duyệt này. Hãy nhập lại key.',
+            unavailable: 'Tiện ích không phản hồi. Hãy tải lại trang.',
+        } as Record<string, string>,
+        licenseActivated: 'Đã kích hoạt bản quyền',
     },
 };
 
@@ -466,6 +516,16 @@ class ScraperPanel {
     private scrollBtn!: HTMLButtonElement;
     private minimizeBtn!: HTMLButtonElement;
     private resetBtn!: HTMLButtonElement;
+    private content!: HTMLDivElement;
+    private lockEl!: HTMLDivElement;
+    private lockText!: HTMLParagraphElement;
+    private lockBtn!: HTMLButtonElement;
+
+    // Without a license, members are still captured; only viewing and downloading are locked,
+    // so whatever was scrolled past can be downloaded right after activating.
+    private locked = false;
+    private licenseState = '';
+    private lockAction: () => void = () => {};
 
     private isMinimized = false;
     private isScrolling = false;
@@ -592,7 +652,30 @@ class ScraperPanel {
 
         log.append(logTitle, this.logEntries);
 
-        this.body.append(stats, this.hintEl, actions, log);
+        this.content = document.createElement('div');
+        this.content.className = 'fbs-content';
+        this.content.append(stats, this.hintEl, actions, log);
+
+        this.lockEl = document.createElement('div');
+        this.lockEl.className = 'fbs-lock';
+        this.lockEl.hidden = true;
+
+        const lockTitle = document.createElement('div');
+        lockTitle.className = 'fbs-lock-title';
+        lockTitle.textContent = T.lockTitle;
+
+        this.lockText = document.createElement('p');
+        this.lockText.className = 'fbs-lock-text';
+        this.lockText.setAttribute('aria-live', 'polite');
+
+        this.lockBtn = document.createElement('button');
+        this.lockBtn.type = 'button';
+        this.lockBtn.className = 'fbs-btn fbs-btn-primary';
+        this.lockBtn.addEventListener('click', () => this.lockAction());
+
+        this.lockEl.append(lockTitle, this.lockText, this.lockBtn);
+
+        this.body.append(this.content, this.lockEl);
         this.panel.append(header, this.body);
         this.applyMinimized();
         this.setEmpty(true);
@@ -643,6 +726,26 @@ class ScraperPanel {
     setVisible(visible: boolean) {
         this.panel.style.display = visible ? '' : 'none';
         if (!visible && this.isScrolling) this.stopAutoScroll(false);
+    }
+
+    setLicense(status: LicenseStatus, actions: { activate: () => void, retry: () => void }) {
+        const wasLocked = this.locked;
+        this.locked = !status.active;
+        this.panel.classList.toggle('fbs-locked', this.locked);
+        this.content.hidden = this.locked;
+        this.lockEl.hidden = !this.locked;
+        if (this.locked) {
+            if (this.isScrolling) this.stopAutoScroll(false);
+            this.lockText.textContent = T.lockStates[status.state] ?? T.lockStates.needs_activation;
+            // These clear up on their own when checked again; the rest need a key.
+            const retry = ['checking', 'network_error', 'clock_behind', 'unavailable'].includes(status.state);
+            this.lockBtn.textContent = retry ? T.lockRetry : T.lockActivate;
+            this.lockBtn.disabled = status.state === 'checking';
+            this.lockAction = retry ? actions.retry : actions.activate;
+        } else if (wasLocked && this.licenseState && this.licenseState !== 'checking') {
+            this.addLog(T.licenseActivated);
+        }
+        this.licenseState = status.state;
     }
 
     async onCapture(addedCount: number, groupId?: string) {
@@ -716,6 +819,7 @@ class ScraperPanel {
     }
 
     private toggleAutoScroll() {
+        if (this.locked) return;
         if (this.isScrolling) {
             this.stopAutoScroll(false);
             return;
@@ -752,6 +856,7 @@ class ScraperPanel {
     }
 
     private async download(kind: 'xlsx' | 'csv') {
+        if (this.locked) return;
         const count = await store.getCount();
         if (count === 0) return;
         const rows = await store.toCsvData();
@@ -898,12 +1003,30 @@ function installHooks(): void {
 
 // ── Entry ────────────────────────────────────
 
+export interface LicenseStatus {
+    active: boolean
+    // checking, needs_activation, expired, revoked, network_error, clock_behind, invalid, unavailable or active.
+    state: string
+}
+
+export interface LicenseGate {
+    check(): Promise<LicenseStatus>
+    openActivation(): void
+    onChange(listener: () => void): void
+}
+
 export interface StartOptions {
     // The extension runs on every Facebook page, so it only shows the panel inside groups.
     groupPagesOnly: boolean
+    // The extension needs a license key; the console script has no way to reach the license
+    // server through Facebook's Content-Security-Policy, so it runs without one.
+    license?: LicenseGate
 }
 
-export function start({ groupPagesOnly }: StartOptions): void {
+// A revoked or expired key should lock a panel left open for hours, not only the next one.
+const LICENSE_RECHECK_MS = 30 * 60 * 1000;
+
+export function start({ groupPagesOnly, license }: StartOptions): void {
     // Hooks go in first: the extension runs at document_start, before Facebook's own requests.
     installHooks();
 
@@ -913,6 +1036,24 @@ export function start({ groupPagesOnly }: StartOptions): void {
         const panel = new ScraperPanel();
         ui = panel;
         panel.render();
+
+        if (license) {
+            let checking = false;
+            const actions = { activate: () => license.openActivation(), retry: () => void refreshLicense() };
+            async function refreshLicense() {
+                if (checking) return;
+                checking = true;
+                try {
+                    panel.setLicense(await license!.check(), actions);
+                } finally {
+                    checking = false;
+                }
+            }
+            panel.setLicense({ active: false, state: 'checking' }, actions);
+            void refreshLicense();
+            license.onChange(() => void refreshLicense());
+            setInterval(() => void refreshLicense(), LICENSE_RECHECK_MS);
+        }
 
         const sync = () => {
             panel.setTheme(detectTheme());
