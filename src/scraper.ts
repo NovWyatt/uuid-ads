@@ -1015,18 +1015,10 @@ export interface LicenseGate {
     onChange(listener: () => void): void
 }
 
-export interface StartOptions {
-    // The extension runs on every Facebook page, so it only shows the panel inside groups.
-    groupPagesOnly: boolean
-    // The extension needs a license key; the console script has no way to reach the license
-    // server through Facebook's Content-Security-Policy, so it runs without one.
-    license?: LicenseGate
-}
-
 // A revoked or expired key should lock a panel left open for hours, not only the next one.
 const LICENSE_RECHECK_MS = 30 * 60 * 1000;
 
-export function start({ groupPagesOnly, license }: StartOptions): void {
+export function start(license: LicenseGate): void {
     // Hooks go in first: the extension runs at document_start, before Facebook's own requests.
     installHooks();
 
@@ -1037,27 +1029,26 @@ export function start({ groupPagesOnly, license }: StartOptions): void {
         ui = panel;
         panel.render();
 
-        if (license) {
-            let checking = false;
-            const actions = { activate: () => license.openActivation(), retry: () => void refreshLicense() };
-            async function refreshLicense() {
-                if (checking) return;
-                checking = true;
-                try {
-                    panel.setLicense(await license!.check(), actions);
-                } finally {
-                    checking = false;
-                }
+        let checking = false;
+        const actions = { activate: () => license.openActivation(), retry: () => void refreshLicense() };
+        async function refreshLicense() {
+            if (checking) return;
+            checking = true;
+            try {
+                panel.setLicense(await license.check(), actions);
+            } finally {
+                checking = false;
             }
-            panel.setLicense({ active: false, state: 'checking' }, actions);
-            void refreshLicense();
-            license.onChange(() => void refreshLicense());
-            setInterval(() => void refreshLicense(), LICENSE_RECHECK_MS);
         }
+        panel.setLicense({ active: false, state: 'checking' }, actions);
+        void refreshLicense();
+        license.onChange(() => void refreshLicense());
+        setInterval(() => void refreshLicense(), LICENSE_RECHECK_MS);
 
         const sync = () => {
             panel.setTheme(detectTheme());
-            if (groupPagesOnly) panel.setVisible(location.pathname.startsWith('/groups/'));
+            // The extension runs on every Facebook page; the panel belongs inside groups only.
+            panel.setVisible(location.pathname.startsWith('/groups/'));
         };
         sync();
         setInterval(sync, 1000);
