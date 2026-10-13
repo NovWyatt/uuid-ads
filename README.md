@@ -16,10 +16,11 @@ The panel shows up by itself on every Facebook group page.
 
 **Install**
 
-1. On this GitHub page, click **Code**, then **Download ZIP**, and unzip it.
+1. Download **[fb-group-members-scraper.zip](https://github.com/NovWyatt/uuid-ads/releases/latest/download/fb-group-members-scraper.zip)** from the [latest release](https://github.com/NovWyatt/uuid-ads/releases/latest).
+1. Unzip it somewhere you will keep it, such as your Documents folder. You get a folder named `fb-group-members-scraper`. The browser loads the extension from that folder, so do not delete or move it afterwards.
 1. Open the extensions page: `brave://extensions`, `chrome://extensions` or `edge://extensions`.
 1. Turn on **Developer mode**.
-1. Click **Load unpacked** and select the `dist/extension` folder inside the unzipped folder.
+1. Click **Load unpacked** and select the `fb-group-members-scraper` folder (the one that holds `manifest.json`).
 
 **Activate**
 
@@ -33,7 +34,7 @@ The panel shows up by itself on every Facebook group page.
 1. Scroll down, or click **Auto scroll** and let the panel scroll for you. It stops by itself after 15 seconds without a new member (end of the list). Click **Stop** to stop earlier.
 1. Click **Download Excel**, or **CSV** if you use Google Sheets or another tool.
 
-**Update:** download the ZIP again, replace the old folder, and click the reload button on the extension's card in the extensions page.
+**Update:** download the ZIP from the latest release again and unzip it over the old folder, replacing its files. Then click the reload button on the extension's card in the extensions page and reload any open Facebook tab (F5): a tab opened before the update keeps running the old version.
 
 ## The panel
 
@@ -71,7 +72,7 @@ Open the `.xlsx` file in Microsoft Excel, LibreOffice Calc or Google Sheets. Cel
 - **What does the extension send to the license server?**
     - Only what checking the key needs: the key, a random ID made for this browser, the browser's name and the extension version, to `license.wyattos.cyou`. Members you capture never leave your browser.
 - **Why does the extension need Developer mode?**
-    - It is not published on the Chrome Web Store, which charges a registration fee. Loading it unpacked is free, and you can read every file it runs in `dist/extension`.
+    - It is not published on the Chrome Web Store, which charges a registration fee. Loading it unpacked is free, and you can read every file it runs in the unzipped folder (the same files as `dist/extension` in this repository).
 - **How do I remove the panel?**
     - Turn the extension off or remove it on the extensions page. Your captured members stay in the cache.
 - **The panel is covering something.**
@@ -92,7 +93,7 @@ npm install
 npm run build
 ```
 
-This builds the extension into `dist/extension`: the panel from `src/scraper.ts` and the license check from `src/license/` (background service worker, activation popup and the bridge between them and the panel).
+This builds the extension into `dist/extension`, the folder the release ZIP holds: the panel from `src/scraper.ts` and the license check from `src/license/` (background service worker, activation popup and the bridge between them and the panel).
 
 ```
 npm test
