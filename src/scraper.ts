@@ -1,5 +1,6 @@
 import { ListStorage } from 'browser-scraping-utils';
-import { COLUMNS, downloadBlob, toCsv, toXlsx, type FBMember } from './export';
+import { COLUMNS, downloadBlob, toCsv, toXlsx, toJson, type FBMember } from './export';
+import { ContactQueue, extractPhone, extractEmail, type ContactQueueCallbacks } from './contact-extractor';
 import iconUsers from '@phosphor-icons/core/bold/users-three-bold.svg?raw';
 import iconExcel from '@phosphor-icons/core/bold/file-xls-bold.svg?raw';
 import iconCsv from '@phosphor-icons/core/bold/file-csv-bold.svg?raw';
@@ -9,6 +10,9 @@ import iconTrash from '@phosphor-icons/core/bold/trash-bold.svg?raw';
 import iconMinimize from '@phosphor-icons/core/bold/minus-bold.svg?raw';
 import iconExpand from '@phosphor-icons/core/bold/arrows-out-simple-bold.svg?raw';
 import iconGrip from '@phosphor-icons/core/bold/dots-six-vertical-bold.svg?raw';
+import iconPlay from '@phosphor-icons/core/bold/play-bold.svg?raw';
+import iconSearch from '@phosphor-icons/core/bold/magnifying-glass-bold.svg?raw';
+import iconJson from '@phosphor-icons/core/bold/brackets-curly-bold.svg?raw';
 
 // ── Types & Storage ──────────────────────────
 
@@ -89,12 +93,16 @@ const CSS = `
     0%, 100% { opacity: 1; }
     50%      { opacity: .35; }
 }
+@keyframes fbs-row-enter {
+    from { background: var(--fbs-accent-soft); }
+    to   { background: transparent; }
+}
 
 .fbs-panel {
     position: fixed !important;
     bottom: 24px !important;
     right: 24px !important;
-    width: 300px !important;
+    width: 520px !important;
     z-index: 99999 !important;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
     font-size: 14px !important;
@@ -206,12 +214,12 @@ const CSS = `
 
 /* ── Stats ── */
 .fbs-stats {
-    padding: 18px 16px 4px !important;
+    padding: 14px 16px 4px !important;
     text-align: center !important;
 }
 .fbs-counter {
     display: block !important;
-    font-size: 40px !important;
+    font-size: 36px !important;
     font-weight: 700 !important;
     letter-spacing: -.02em !important;
     line-height: 1.1 !important;
@@ -230,7 +238,7 @@ const CSS = `
     margin-top: 2px !important;
 }
 .fbs-hint {
-    margin: 12px 12px 12px !important;
+    margin: 8px 12px 8px !important;
     padding: 8px 10px !important;
     border-radius: 10px !important;
     background: var(--fbs-raised) !important;
@@ -240,16 +248,119 @@ const CSS = `
     line-height: 1.45 !important;
 }
 
-/* ── Actions ── */
-.fbs-actions {
-    padding: 0 12px 12px !important;
-    display: grid !important;
-    grid-template-columns: repeat(6, 1fr) !important;
+/* ── Search ── */
+.fbs-search-wrap {
+    padding: 0 12px 8px !important;
+    display: flex !important;
+    align-items: center !important;
     gap: 6px !important;
 }
-.fbs-btn-primary { grid-column: span 4 !important; }
+.fbs-search-input {
+    flex: 1 !important;
+    height: 32px !important;
+    padding: 0 10px 0 30px !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--fbs-border) !important;
+    background: var(--fbs-raised) !important;
+    color: var(--fbs-text) !important;
+    font-family: inherit !important;
+    font-size: 12px !important;
+    outline: none !important;
+    transition: border-color .15s !important;
+}
+.fbs-search-input:focus {
+    border-color: var(--fbs-accent-text) !important;
+}
+.fbs-search-input::placeholder {
+    color: var(--fbs-muted) !important;
+}
+.fbs-search-icon {
+    position: absolute !important;
+    left: 20px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: var(--fbs-muted) !important;
+    pointer-events: none !important;
+}
+.fbs-search-icon svg { width: 14px !important; height: 14px !important; }
+.fbs-search-wrap { position: relative !important; }
+
+/* ── Data Table ── */
+.fbs-table-wrap {
+    max-height: 240px !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    margin: 0 12px 8px !important;
+    border: 1px solid var(--fbs-border) !important;
+    border-radius: 8px !important;
+    scrollbar-width: thin !important;
+}
+.fbs-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+    white-space: nowrap !important;
+}
+.fbs-table th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2 !important;
+    background: var(--fbs-raised) !important;
+    color: var(--fbs-text-2) !important;
+    font-weight: 600 !important;
+    font-size: 10px !important;
+    text-transform: uppercase !important;
+    letter-spacing: .04em !important;
+    padding: 6px 8px !important;
+    text-align: left !important;
+    border-bottom: 1px solid var(--fbs-border) !important;
+}
+.fbs-table td {
+    padding: 4px 8px !important;
+    color: var(--fbs-text) !important;
+    border-bottom: 1px solid var(--fbs-border) !important;
+    max-width: 140px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+.fbs-table tr:last-child td { border-bottom: none !important; }
+.fbs-table a {
+    color: var(--fbs-accent-text) !important;
+    text-decoration: none !important;
+}
+.fbs-table a:hover { text-decoration: underline !important; }
+.fbs-table tr.fbs-row-new {
+    animation: fbs-row-enter .8s ease-out !important;
+}
+.fbs-table-empty {
+    padding: 12px !important;
+    text-align: center !important;
+    color: var(--fbs-muted) !important;
+    font-size: 12px !important;
+}
+.fbs-source-badge {
+    display: inline-block !important;
+    font-size: 9px !important;
+    padding: 1px 5px !important;
+    border-radius: 4px !important;
+    background: var(--fbs-accent-soft) !important;
+    color: var(--fbs-accent-text) !important;
+    font-weight: 600 !important;
+}
+
+/* ── Actions ── */
+.fbs-actions {
+    padding: 0 12px 10px !important;
+    display: grid !important;
+    grid-template-columns: repeat(8, 1fr) !important;
+    gap: 6px !important;
+}
+.fbs-btn-primary { grid-column: span 3 !important; }
 .fbs-btn-csv { grid-column: span 2 !important; }
-.fbs-btn-scroll, .fbs-btn-ghost { grid-column: span 3 !important; }
+.fbs-btn-json { grid-column: span 3 !important; }
+.fbs-btn-scroll { grid-column: span 4 !important; }
+.fbs-btn-ghost { grid-column: span 4 !important; }
 .fbs-btn {
     height: 36px !important;
     padding: 0 12px !important;
@@ -283,7 +394,7 @@ const CSS = `
     color: var(--fbs-on-accent) !important;
 }
 .fbs-btn-primary:hover:not(:disabled) { background: var(--fbs-accent-hover) !important; }
-.fbs-btn-csv { height: 40px !important; }
+.fbs-btn-csv, .fbs-btn-json { height: 40px !important; }
 .fbs-btn-secondary {
     background: var(--fbs-raised) !important;
     color: var(--fbs-text) !important;
@@ -322,7 +433,7 @@ const CSS = `
     padding: 0 14px 4px !important;
 }
 .fbs-log-entries {
-    max-height: 92px !important;
+    max-height: 72px !important;
     overflow-y: auto !important;
     padding: 0 14px !important;
     scrollbar-width: thin !important;
@@ -358,7 +469,7 @@ const CSS = `
     line-height: 1.5 !important;
     color: var(--fbs-text-2) !important;
 }
-/* The primary button spans 4 of the action grid's columns; here it would create 4 implicit ones. */
+/* The primary button spans columns of the action grid; here it would create implicit ones. */
 .fbs-lock .fbs-btn { width: 100% !important; grid-column: auto !important; }
 .fbs-panel.fbs-locked .fbs-badge { display: none !important; }
 
@@ -387,25 +498,41 @@ const TEXT = {
         hintCapturing: 'Capturing members... keep scrolling!',
         hintIdle: 'Scroll for more, or download when ready',
         hintDone: 'Looks like the end of the list. Download your file.',
-        downloadExcel: 'Download Excel',
+        downloadExcel: 'Excel',
         downloadCsv: 'CSV',
+        downloadJson: 'JSON',
         sheetName: 'Members',
         autoScroll: 'Auto scroll',
         stopScroll: 'Stop',
+        pauseScroll: 'Pause',
+        resumeScroll: 'Resume',
         reset: 'Clear',
         confirmReset: 'Confirm?',
         minimize: 'Minimize',
         expand: 'Expand',
         activity: 'Activity',
         ready: 'Ready',
+        searchPlaceholder: 'Search by name, UID, phone...',
+        tableHeaderName: 'Name',
+        tableHeaderUID: 'UID',
+        tableHeaderProfile: 'Profile',
+        tableHeaderSource: 'Source',
+        tableHeaderPhone: 'Phone',
+        tableHeaderEmail: 'Email',
+        tableEmpty: 'No members captured yet',
+        tableNoMatch: 'No matching results',
         loadedFromCache: (n: string) => `Loaded ${n} from cache`,
         added: (n: string) => `+${n} members`,
         scrollStarted: 'Auto scroll started',
         scrollStopped: 'Auto scroll stopped',
+        scrollPaused: 'Auto scroll paused',
+        scrollResumed: 'Auto scroll resumed',
         autoStopped: (s: number) => `No new members for ${s}s, auto scroll stopped`,
         downloaded: (n: string, kind: string) => `Downloaded ${n} members (${kind})`,
         downloadFailed: 'Download failed',
         cleared: 'All data cleared',
+        contactFound: (name: string) => `Contact found for ${name}`,
+        contactCheckpoint: 'Contact scan paused (checkpoint detected)',
         lockTitle: 'License required',
         lockActivate: 'Enter license key',
         lockRetry: 'Check again',
@@ -429,25 +556,41 @@ const TEXT = {
         hintCapturing: 'Đang lấy thành viên... cứ cuộn tiếp!',
         hintIdle: 'Cuộn thêm để lấy tiếp, hoặc tải file khi đủ',
         hintDone: 'Có vẻ đã hết danh sách. Bấm Tải Excel để lưu.',
-        downloadExcel: 'Tải Excel',
+        downloadExcel: 'Excel',
         downloadCsv: 'CSV',
+        downloadJson: 'JSON',
         sheetName: 'Thành viên',
         autoScroll: 'Tự động cuộn',
         stopScroll: 'Dừng cuộn',
+        pauseScroll: 'Tạm dừng',
+        resumeScroll: 'Tiếp tục',
         reset: 'Xóa',
         confirmReset: 'Xác nhận?',
         minimize: 'Thu nhỏ',
         expand: 'Mở rộng',
         activity: 'Hoạt động',
         ready: 'Sẵn sàng',
+        searchPlaceholder: 'Tìm theo tên, UID, SĐT...',
+        tableHeaderName: 'Tên',
+        tableHeaderUID: 'UID',
+        tableHeaderProfile: 'Hồ sơ',
+        tableHeaderSource: 'Nguồn',
+        tableHeaderPhone: 'SĐT',
+        tableHeaderEmail: 'Email',
+        tableEmpty: 'Chưa có thành viên nào',
+        tableNoMatch: 'Không có kết quả phù hợp',
         loadedFromCache: (n: string) => `Đã nạp ${n} người từ bộ nhớ`,
         added: (n: string) => `+${n} thành viên`,
         scrollStarted: 'Bắt đầu tự động cuộn',
         scrollStopped: 'Đã dừng tự động cuộn',
+        scrollPaused: 'Đã tạm dừng cuộn',
+        scrollResumed: 'Tiếp tục cuộn',
         autoStopped: (s: number) => `${s} giây không có thành viên mới, đã tự dừng cuộn`,
         downloaded: (n: string, kind: string) => `Đã tải xuống ${n} thành viên (${kind})`,
         downloadFailed: 'Tải xuống thất bại',
         cleared: 'Đã xóa toàn bộ dữ liệu',
+        contactFound: (name: string) => `Tìm thấy liên hệ: ${name}`,
+        contactCheckpoint: 'Quét liên hệ tạm dừng (phát hiện checkpoint)',
         lockTitle: 'Cần key bản quyền',
         lockActivate: 'Nhập key bản quyền',
         lockRetry: 'Kiểm tra lại',
@@ -502,6 +645,16 @@ function setButton(btn: HTMLButtonElement, svg: string, label: string) {
     btn.replaceChildren(iconSpan(svg), document.createTextNode(label));
 }
 
+/** Lightweight row data for the real-time table */
+interface TableRow {
+    profileId: string;
+    fullName: string;
+    profileLink: string;
+    source: string;
+    phone: string | null;
+    email: string | null;
+}
+
 class ScraperPanel {
     private panel!: HTMLDivElement;
     private body!: HTMLDivElement;
@@ -513,6 +666,7 @@ class ScraperPanel {
     private logEntries!: HTMLDivElement;
     private excelBtn!: HTMLButtonElement;
     private csvBtn!: HTMLButtonElement;
+    private jsonBtn!: HTMLButtonElement;
     private scrollBtn!: HTMLButtonElement;
     private minimizeBtn!: HTMLButtonElement;
     private resetBtn!: HTMLButtonElement;
@@ -520,6 +674,10 @@ class ScraperPanel {
     private lockEl!: HTMLDivElement;
     private lockText!: HTMLParagraphElement;
     private lockBtn!: HTMLButtonElement;
+    private searchInput!: HTMLInputElement;
+    private tableBody!: HTMLTableSectionElement;
+    private tableEmptyEl!: HTMLDivElement;
+    private tableWrap!: HTMLDivElement;
 
     // Without a license, members are still captured; only viewing and downloading are locked,
     // so whatever was scrolled past can be downloaded right after activating.
@@ -529,6 +687,7 @@ class ScraperPanel {
 
     private isMinimized = false;
     private isScrolling = false;
+    private isScrollPaused = false;
     private scrollTimer: ReturnType<typeof setInterval> | null = null;
     private lastNewMemberAt = 0;
     private groups = new Set<string>();
@@ -540,9 +699,48 @@ class ScraperPanel {
     private dragOffX = 0;
     private dragOffY = 0;
 
+    // Real-time table data
+    private tableRows: TableRow[] = [];
+    private searchTerm = '';
+
+    // Contact extraction queue
+    contactQueue!: ContactQueue;
+
     constructor() {
+        this.initContactQueue();
         this.build();
         this.setupDrag();
+    }
+
+    // ── Contact Queue ──
+
+    private initContactQueue() {
+        const callbacks: ContactQueueCallbacks = {
+            onResult: (profileId, phone, email) => {
+                // Update the store with contact info
+                waitForStore().then(() =>
+                    store.addElem(profileId, { phone: phone ?? null, email: email ?? null } as any, true)
+                );
+                // Update the table row
+                const row = this.tableRows.find(r => r.profileId === profileId);
+                if (row) {
+                    row.phone = phone;
+                    row.email = email;
+                    this.renderTableRows();
+                }
+                if (phone || email) {
+                    const name = row?.fullName || profileId;
+                    this.addLog(T.contactFound(name));
+                }
+            },
+            onCheckpoint: () => {
+                this.addLog(T.contactCheckpoint);
+            },
+            onLog: (msg) => {
+                this.addLog(msg);
+            },
+        };
+        this.contactQueue = new ContactQueue(callbacks);
     }
 
     // ── Build DOM ──
@@ -611,6 +809,49 @@ class ScraperPanel {
         this.hintEl.className = 'fbs-hint';
         this.hintEl.textContent = T.hintStart;
 
+        // Search bar
+        const searchWrap = document.createElement('div');
+        searchWrap.className = 'fbs-search-wrap';
+
+        const searchIcon = iconSpan(iconSearch, 'fbs-search-icon');
+
+        this.searchInput = document.createElement('input');
+        this.searchInput.type = 'text';
+        this.searchInput.className = 'fbs-search-input';
+        this.searchInput.placeholder = T.searchPlaceholder;
+        this.searchInput.addEventListener('input', () => {
+            this.searchTerm = this.searchInput.value.toLowerCase().trim();
+            this.renderTableRows();
+        });
+
+        searchWrap.append(searchIcon, this.searchInput);
+
+        // Data table
+        this.tableWrap = document.createElement('div');
+        this.tableWrap.className = 'fbs-table-wrap';
+
+        const table = document.createElement('table');
+        table.className = 'fbs-table';
+
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        for (const h of [T.tableHeaderName, T.tableHeaderUID, T.tableHeaderProfile, T.tableHeaderSource, T.tableHeaderPhone, T.tableHeaderEmail]) {
+            const th = document.createElement('th');
+            th.textContent = h;
+            headerRow.appendChild(th);
+        }
+        thead.appendChild(headerRow);
+
+        this.tableBody = document.createElement('tbody');
+        table.append(thead, this.tableBody);
+        this.tableWrap.appendChild(table);
+
+        this.tableEmptyEl = document.createElement('div');
+        this.tableEmptyEl.className = 'fbs-table-empty';
+        this.tableEmptyEl.textContent = T.tableEmpty;
+        this.tableWrap.appendChild(this.tableEmptyEl);
+
+        // Actions
         const actions = document.createElement('div');
         actions.className = 'fbs-actions';
 
@@ -626,6 +867,12 @@ class ScraperPanel {
         setButton(this.csvBtn, iconCsv, T.downloadCsv);
         this.csvBtn.addEventListener('click', () => this.download('csv'));
 
+        this.jsonBtn = document.createElement('button');
+        this.jsonBtn.type = 'button';
+        this.jsonBtn.className = 'fbs-btn fbs-btn-secondary fbs-btn-json';
+        setButton(this.jsonBtn, iconJson, T.downloadJson);
+        this.jsonBtn.addEventListener('click', () => this.download('json'));
+
         this.scrollBtn = document.createElement('button');
         this.scrollBtn.type = 'button';
         this.scrollBtn.className = 'fbs-btn fbs-btn-secondary fbs-btn-scroll';
@@ -638,7 +885,7 @@ class ScraperPanel {
         setButton(this.resetBtn, iconTrash, T.reset);
         this.resetBtn.addEventListener('click', () => this.handleReset());
 
-        actions.append(this.excelBtn, this.csvBtn, this.scrollBtn, this.resetBtn);
+        actions.append(this.excelBtn, this.csvBtn, this.jsonBtn, this.scrollBtn, this.resetBtn);
 
         const log = document.createElement('div');
         log.className = 'fbs-log';
@@ -654,7 +901,7 @@ class ScraperPanel {
 
         this.content = document.createElement('div');
         this.content.className = 'fbs-content';
-        this.content.append(stats, this.hintEl, actions, log);
+        this.content.append(stats, this.hintEl, searchWrap, this.tableWrap, actions, log);
 
         this.lockEl = document.createElement('div');
         this.lockEl.className = 'fbs-lock';
@@ -716,6 +963,8 @@ class ScraperPanel {
         document.body.appendChild(this.panel);
         waitForStore().then(() => this.refreshCounter()).then(count => {
             this.addLog(count > 0 ? T.loadedFromCache(fmtNum(count)) : T.ready);
+            // Load existing data into the table
+            if (count > 0) this.loadTableFromStore();
         });
     }
 
@@ -748,12 +997,23 @@ class ScraperPanel {
         this.licenseState = status.state;
     }
 
-    async onCapture(addedCount: number, groupId?: string) {
+    async onCapture(addedCount: number, groupId?: string, newMembers?: TableRow[]) {
         this.lastNewMemberAt = Date.now();
         if (groupId) this.groups.add(groupId);
         this.groupCountEl.textContent = T.groups(this.groups.size);
         await this.refreshCounter();
         this.addLog(T.added(fmtNum(addedCount)));
+
+        // Add new members to real-time table
+        if (newMembers && newMembers.length > 0) {
+            for (const m of newMembers) {
+                // Avoid duplicates in the table
+                if (!this.tableRows.some(r => r.profileId === m.profileId)) {
+                    this.tableRows.push(m);
+                }
+            }
+            this.renderTableRows(true);
+        }
 
         this.dot.classList.add('fbs-dot-on');
         this.hintEl.textContent = T.hintCapturing;
@@ -770,7 +1030,121 @@ class ScraperPanel {
         }, 2500);
     }
 
+    /** Update a specific member's contact info in the table */
+    updateMemberContact(profileId: string, phone: string | null, email: string | null) {
+        const row = this.tableRows.find(r => r.profileId === profileId);
+        if (row) {
+            row.phone = phone;
+            row.email = email;
+            this.renderTableRows();
+        }
+    }
+
     // ── Private ──
+
+    private async loadTableFromStore() {
+        const all = await store.getAll();
+        all.forEach((member, _id) => {
+            const m = member as any;
+            if (!this.tableRows.some(r => r.profileId === m.profileId)) {
+                this.tableRows.push({
+                    profileId: m.profileId || '',
+                    fullName: m.fullName || '',
+                    profileLink: m.profileLink || '',
+                    source: m.source || '',
+                    phone: m.phone ?? null,
+                    email: m.email ?? null,
+                });
+            }
+        });
+        this.renderTableRows();
+    }
+
+    private renderTableRows(highlightNew = false) {
+        const filtered = this.searchTerm
+            ? this.tableRows.filter(r =>
+                r.fullName.toLowerCase().includes(this.searchTerm) ||
+                r.profileId.toLowerCase().includes(this.searchTerm) ||
+                (r.phone && r.phone.includes(this.searchTerm)) ||
+                (r.email && r.email.toLowerCase().includes(this.searchTerm)) ||
+                r.source.toLowerCase().includes(this.searchTerm)
+            )
+            : this.tableRows;
+
+        // Clear existing rows
+        this.tableBody.innerHTML = '';
+
+        if (this.tableRows.length === 0) {
+            this.tableEmptyEl.textContent = T.tableEmpty;
+            this.tableEmptyEl.style.display = '';
+            return;
+        }
+
+        if (filtered.length === 0) {
+            this.tableEmptyEl.textContent = T.tableNoMatch;
+            this.tableEmptyEl.style.display = '';
+            return;
+        }
+
+        this.tableEmptyEl.style.display = 'none';
+
+        // Render in reverse order (newest first), limit to last 200 for performance
+        const toShow = filtered.slice(-200).reverse();
+        for (const row of toShow) {
+            const tr = document.createElement('tr');
+            if (highlightNew && filtered.indexOf(row) >= filtered.length - 5) {
+                tr.className = 'fbs-row-new';
+            }
+
+            // Name
+            const tdName = document.createElement('td');
+            tdName.textContent = row.fullName;
+            tdName.title = row.fullName;
+
+            // UID
+            const tdUid = document.createElement('td');
+            tdUid.textContent = row.profileId;
+            tdUid.title = row.profileId;
+
+            // Profile link
+            const tdLink = document.createElement('td');
+            if (row.profileLink) {
+                const a = document.createElement('a');
+                a.href = row.profileLink;
+                a.target = '_blank';
+                a.rel = 'noopener';
+                a.textContent = 'View';
+                tdLink.appendChild(a);
+            }
+
+            // Source
+            const tdSource = document.createElement('td');
+            if (row.source) {
+                const badge = document.createElement('span');
+                badge.className = 'fbs-source-badge';
+                badge.textContent = row.source;
+                tdSource.appendChild(badge);
+            }
+
+            // Phone
+            const tdPhone = document.createElement('td');
+            tdPhone.textContent = row.phone ?? '';
+            tdPhone.title = row.phone ?? '';
+
+            // Email
+            const tdEmail = document.createElement('td');
+            tdEmail.textContent = row.email ?? '';
+            tdEmail.title = row.email ?? '';
+
+            tr.append(tdName, tdUid, tdLink, tdSource, tdPhone, tdEmail);
+            this.tableBody.appendChild(tr);
+        }
+
+        // Auto-scroll table to top to show newest
+        if (highlightNew) {
+            this.tableWrap.scrollTop = 0;
+        }
+    }
 
     private async refreshCounter(): Promise<number> {
         const count = await store.getCount();
@@ -784,6 +1158,7 @@ class ScraperPanel {
     private setEmpty(empty: boolean) {
         this.excelBtn.disabled = empty;
         this.csvBtn.disabled = empty;
+        this.jsonBtn.disabled = empty;
         if (!this.confirmingReset) this.resetBtn.disabled = empty;
     }
 
@@ -820,13 +1195,24 @@ class ScraperPanel {
 
     private toggleAutoScroll() {
         if (this.locked) return;
-        if (this.isScrolling) {
-            this.stopAutoScroll(false);
+
+        // If scrolling and not paused: pause
+        if (this.isScrolling && !this.isScrollPaused) {
+            this.pauseAutoScroll();
             return;
         }
+
+        // If scrolling and paused: resume
+        if (this.isScrolling && this.isScrollPaused) {
+            this.resumeAutoScroll();
+            return;
+        }
+
+        // Not scrolling: start
         this.isScrolling = true;
+        this.isScrollPaused = false;
         this.lastNewMemberAt = Date.now();
-        setButton(this.scrollBtn, iconPause, T.stopScroll);
+        setButton(this.scrollBtn, iconPause, T.pauseScroll);
         this.scrollBtn.classList.add('fbs-on');
         this.scrollBtn.setAttribute('aria-pressed', 'true');
         this.scrollTimer = setInterval(() => {
@@ -838,8 +1224,33 @@ class ScraperPanel {
         this.addLog(T.scrollStarted);
     }
 
+    private pauseAutoScroll() {
+        this.isScrollPaused = true;
+        if (this.scrollTimer) {
+            clearInterval(this.scrollTimer);
+            this.scrollTimer = null;
+        }
+        setButton(this.scrollBtn, iconPlay, T.resumeScroll);
+        this.scrollBtn.classList.add('fbs-on');
+        this.addLog(T.scrollPaused);
+    }
+
+    private resumeAutoScroll() {
+        this.isScrollPaused = false;
+        this.lastNewMemberAt = Date.now();
+        setButton(this.scrollBtn, iconPause, T.pauseScroll);
+        this.scrollTimer = setInterval(() => {
+            window.scrollTo(0, document.body.scrollHeight);
+            if (Date.now() - this.lastNewMemberAt > AUTO_STOP_MS) {
+                this.stopAutoScroll(true);
+            }
+        }, 150);
+        this.addLog(T.scrollResumed);
+    }
+
     private stopAutoScroll(endOfList: boolean) {
         this.isScrolling = false;
+        this.isScrollPaused = false;
         setButton(this.scrollBtn, iconScroll, T.autoScroll);
         this.scrollBtn.classList.remove('fbs-on');
         this.scrollBtn.setAttribute('aria-pressed', 'false');
@@ -855,16 +1266,27 @@ class ScraperPanel {
         }
     }
 
-    private async download(kind: 'xlsx' | 'csv') {
+    private async download(kind: 'xlsx' | 'csv' | 'json') {
         if (this.locked) return;
         const count = await store.getCount();
         if (count === 0) return;
-        const rows = await store.toCsvData();
         const ts = new Date().toISOString().replace(/[:.]/g, '-');
         try {
-            const blob = kind === 'xlsx' ? await toXlsx(rows, T.sheetName) : toCsv(rows);
-            downloadBlob(blob, `fb-members-${ts}.${kind}`);
-            this.addLog(T.downloaded(fmtNum(count), kind === 'xlsx' ? 'Excel' : 'CSV'));
+            if (kind === 'json') {
+                // For JSON, we need the full member objects
+                const allData = await store.getAll();
+                const members: FBMember[] = [];
+                allData.forEach((member) => {
+                    members.push(member);
+                });
+                const blob = toJson(members);
+                downloadBlob(blob, `fb-members-${ts}.json`);
+            } else {
+                const rows = await store.toCsvData();
+                const blob = kind === 'xlsx' ? await toXlsx(rows, T.sheetName) : toCsv(rows);
+                downloadBlob(blob, `fb-members-${ts}.${kind}`);
+            }
+            this.addLog(T.downloaded(fmtNum(count), kind === 'xlsx' ? 'Excel' : kind === 'csv' ? 'CSV' : 'JSON'));
         } catch (err) {
             this.addLog(T.downloadFailed);
             console.error(err);
@@ -887,6 +1309,12 @@ class ScraperPanel {
             this.refreshCounter();
             this.addLog(T.cleared);
             this.hintEl.textContent = T.hintStart;
+            // Clear table and contact queue
+            this.tableRows = [];
+            this.searchInput.value = '';
+            this.searchTerm = '';
+            this.renderTableRows();
+            this.contactQueue.clear();
         });
     }
 
@@ -900,6 +1328,27 @@ class ScraperPanel {
 // ── Data Processing ──────────────────────────
 
 let ui: ScraperPanel | undefined;
+
+/** Determine the source type from the GraphQL data context */
+function detectSource(dataGraphQL: any): string {
+    if (dataGraphQL?.data?.group?.new_members?.edges || dataGraphQL?.data?.node?.new_members?.edges) {
+        return 'Members';
+    }
+    if (dataGraphQL?.data?.group?.new_forum_members?.edges || dataGraphQL?.data?.node?.new_forum_members?.edges) {
+        return 'Members';
+    }
+    if (dataGraphQL?.data?.group?.search_results?.edges || dataGraphQL?.data?.node?.search_results?.edges) {
+        return 'Search';
+    }
+    // Check for post/comment contexts
+    if (dataGraphQL?.data?.node?.__typename === 'Comment' || dataGraphQL?.data?.comment) {
+        return 'Comment';
+    }
+    if (dataGraphQL?.data?.node?.__typename === 'Story' || dataGraphQL?.data?.story) {
+        return 'Post';
+    }
+    return 'Members';
+}
 
 function processResponse(dataGraphQL: any): void {
     let data: any;
@@ -922,7 +1371,9 @@ function processResponse(dataGraphQL: any): void {
         return;
     }
 
+    const source = detectSource(dataGraphQL);
     const toAdd: [string, FBMember][] = [];
+    const newTableRows: TableRow[] = [];
     let groupId: string | undefined;
 
     membersEdges.forEach(memberNode => {
@@ -938,22 +1389,50 @@ function processResponse(dataGraphQL: any): void {
         const gid = node.group_membership?.associated_group?.id;
         if (gid) groupId = gid;
 
-        toAdd.push([id, {
+        const bioText = bio_text?.text || '';
+
+        // Try to extract phone/email from bio text inline (fast, no network request)
+        const inlinePhone = extractPhone(bioText);
+        const inlineEmail = extractEmail(bioText);
+
+        const member: FBMember = {
             profileId: id,
             fullName: name,
             profileLink: url,
-            bio: bio_text?.text || '',
+            bio: bioText,
             imageSrc: profile_picture?.uri || '',
             groupId: gid || '',
             groupJoiningText: joiningText || '',
-            profileType: profileType || ''
-        }]);
+            profileType: profileType || '',
+            phone: inlinePhone ?? null,
+            email: inlineEmail ?? null,
+            source: source,
+        };
+
+        toAdd.push([id, member]);
+        newTableRows.push({
+            profileId: id,
+            fullName: name,
+            profileLink: url,
+            source: source,
+            phone: inlinePhone ?? null,
+            email: inlineEmail ?? null,
+        });
     });
 
     if (toAdd.length > 0) {
         waitForStore().then(() => store.addElems(toAdd)).then((addedCount) => {
             if (typeof addedCount === 'number' && addedCount > 0) {
-                ui?.onCapture(addedCount, groupId);
+                ui?.onCapture(addedCount, groupId, newTableRows);
+
+                // Enqueue members for background contact extraction
+                // (only those without phone/email already found in bio)
+                const toEnqueue = toAdd
+                    .filter(([, m]) => !m.phone || !m.email)
+                    .map(([, m]) => ({ profileId: m.profileId, bio: m.bio }));
+                if (toEnqueue.length > 0) {
+                    ui?.contactQueue.enqueue(toEnqueue);
+                }
             }
         });
     }

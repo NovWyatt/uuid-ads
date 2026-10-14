@@ -9,6 +9,9 @@ export interface FBMember {
     groupId: string
     groupJoiningText: string
     profileType: string
+    phone: string | null
+    email: string | null
+    source: string
 }
 
 // A profile.php?id= link always opens the right person, even after a username change.
@@ -27,6 +30,9 @@ export const COLUMNS: Column[] = [
     { header: 'Profile Link', width: 42, value: m => m.profileLink, link: true },
     { header: 'Profile Link (Id)', width: 54, value: m => profileIdLink(m.profileId), link: true },
     { header: 'Bio', width: 40, value: m => m.bio },
+    { header: 'Phone', width: 16, value: m => m.phone ?? '' },
+    { header: 'Email', width: 28, value: m => m.email ?? '' },
+    { header: 'Source', width: 16, value: m => m.source || '' },
     { header: 'ImageSrc', width: 24, value: m => m.imageSrc },
     { header: 'GroupId', width: 18, value: m => m.groupId },
     { header: 'Group Joining Text', width: 28, value: m => m.groupJoiningText },
@@ -54,7 +60,27 @@ export function toCsv(rows: string[][]): Blob {
     };
     const body = rows.map(r => r.map(escape).join(',')).join('\r\n');
     // The BOM makes Excel read the file as UTF-8 instead of the Windows code page.
-    return new Blob(['﻿' + body + '\r\n'], { type: 'text/csv;charset=utf-8' });
+    return new Blob(['\ufeff' + body + '\r\n'], { type: 'text/csv;charset=utf-8' });
+}
+
+/** Export member data as a JSON blob. Each member is a clean object without internal fields. */
+export function toJson(members: FBMember[]): Blob {
+    const data = members.map(m => ({
+        profileId: m.profileId,
+        fullName: m.fullName,
+        profileLink: m.profileLink,
+        profileLinkId: profileIdLink(m.profileId),
+        bio: m.bio,
+        phone: m.phone ?? null,
+        email: m.email ?? null,
+        source: m.source || '',
+        imageSrc: m.imageSrc,
+        groupId: m.groupId,
+        groupJoiningText: m.groupJoiningText,
+        profileType: m.profileType,
+    }));
+    const json = JSON.stringify(data, null, 2);
+    return new Blob([json], { type: 'application/json;charset=utf-8' });
 }
 
 export const isFacebookUrl = (url: string) => /^https:\/\/(www|web|m)\.facebook\.com\/[^"]*$/.test(url) && url.length <= 255;
